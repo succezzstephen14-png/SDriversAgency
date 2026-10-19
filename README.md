@@ -291,6 +291,21 @@ Before going live:
    php artisan route:cache
    ```
 
+### Hostinger Shared Hosting
+
+Deploy this as a PHP application. The project root contains a small `index.php`
+and `.htaccess` that forward web requests into Laravel's `public` directory when
+the domain must use `public_html` as its document root. If hPanel allows it,
+prefer setting the document root directly to the project's `public` directory.
+
+Keep `.env` on the server and out of Git. Configure `APP_KEY` and the database
+settings there; for a Hostinger-hosted MySQL database use the host shown for
+local website connections (usually `localhost`), not the `srv*.hstgr.io` host
+used for external connections. Build the frontend with `npm run build`, install
+production Composer dependencies, and run migrations from Hostinger Terminal
+when available. Generate `APP_KEY` once and keep the same key for the life of
+the application.
+
 ## 📞 Support
 
 - Laravel Docs: https://laravel.com/docs
