@@ -74,33 +74,44 @@ class User extends Authenticatable
     /**
      * Ensure the default system and CMS admin accounts exist.
      */
-    public static function ensureDefaultAdminAccounts(): array
+    public static function ensureDefaultAdminAccounts(): void
     {
         $accounts = [
-            'system.admin@dashboard.local' => [
+            config('admin.system.email') => [
                 'name' => 'System Administrator',
-                'password' => 'SysAdm@2026!',
+                'password' => config('admin.system.password'),
                 'role' => 'admin',
+                'legacy_emails' => ['system.admin@dashboard.local'],
             ],
-            'site.admin@dashboard.local' => [
+            config('admin.cms.email') => [
                 'name' => 'CMS Administrator',
-                'password' => 'SiteAdm@2026!',
+                'password' => config('admin.cms.password'),
                 'role' => 'cms_admin',
+                'legacy_emails' => ['site.admin@dashboard.local'],
             ],
         ];
 
         foreach ($accounts as $email => $data) {
-            User::updateOrCreate(
-                ['email' => $email],
-                [
-                    'name' => $data['name'],
-                    'password' => Hash::make($data['password']),
-                    'role' => $data['role'],
-                ]
-            );
-        }
+            if (! is_string($data['password']) || $data['password'] === '') {
+                throw new \RuntimeException("Missing seeding password for admin account {$email}. Set the corresponding environment variable.");
+            }
 
-        return $accounts;
+            $user = User::where('email', $email)->first();
+            $legacyUser = User::whereIn('email', $data['legacy_emails'])->first();
+
+            if ($user && $legacyUser && $user->isNot($legacyUser)) {
+                throw new \RuntimeException("Both the configured and legacy admin accounts exist for {$email}; resolve the duplicate accounts before seeding.");
+            }
+
+            $user ??= $legacyUser ?? new User();
+
+            $user->fill([
+                'name' => $data['name'],
+                'email' => $email,
+                'password' => Hash::make($data['password']),
+                'role' => $data['role'],
+            ])->save();
+        }
     }
 
     /**

@@ -306,6 +306,15 @@ production Composer dependencies, and run migrations from Hostinger Terminal
 when available. Generate `APP_KEY` once and keep the same key for the life of
 the application.
 
+Set `SYSTEM_ADMIN_EMAIL` and `SYSTEM_ADMIN_PASSWORD` in the server `.env` to
+configure the seeded administrator. Then run
+`php artisan config:clear` followed by
+`php artisan db:seed --class=AdminAccountsSeeder --force` from the project root
+to create or update the admin and CMS accounts. The seeder reuses the existing
+default admin record when changing its email. Login requests do not re-seed or
+reset account passwords. Keep the password out of Git and rotate it after the
+first login.
+
 ## 📞 Support
 
 - Laravel Docs: https://laravel.com/docs

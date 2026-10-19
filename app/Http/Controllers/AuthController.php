@@ -48,8 +48,6 @@ class AuthController extends Controller
 
     public function login(Request $request, string $loginType = 'user')
     {
-        User::ensureDefaultAdminAccounts();
-
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],

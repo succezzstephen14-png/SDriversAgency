@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::ensureDefaultAdminAccounts();
+        $this->call(AdminAccountsSeeder::class);
 
         $this->call(SiteSettingSeeder::class);
 
