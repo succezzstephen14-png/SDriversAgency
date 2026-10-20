@@ -304,14 +304,18 @@
                             'Ghana Card' => $driver->ghana_card_file,
                             'Passport' => $driver->passport_file,
                             'Guarantor 1 ID' => $driver->guarantor_ghana_card_file,
+                            'Guarantor 1 Passport Photo' => $driver->guarantor_passport_file,
                             'Guarantor 2 ID' => $driver->second_guarantor_ghana_card_file,
+                            'Guarantor 2 Passport Photo' => $driver->second_guarantor_passport_file,
                         ];
                         $driverDocumentFields = [
                             'License' => 'license_file',
                             'Ghana Card' => 'ghana_card_file',
                             'Passport' => 'passport_file',
                             'Guarantor 1 ID' => 'guarantor_ghana_card_file',
+                            'Guarantor 1 Passport Photo' => 'guarantor_passport_file',
                             'Guarantor 2 ID' => 'second_guarantor_ghana_card_file',
+                            'Guarantor 2 Passport Photo' => 'second_guarantor_passport_file',
                         ];
                     @endphp
                     <ul class="documents-list">

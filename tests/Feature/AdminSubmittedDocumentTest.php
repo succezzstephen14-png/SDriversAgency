@@ -17,10 +17,14 @@ class AdminSubmittedDocumentTest extends TestCase
     {
         Storage::fake('public');
         Storage::disk('public')->put('documents/ghana-card.jpg', 'ghana card image');
+        Storage::disk('public')->put('documents/guarantor-passport.jpg', 'guarantor passport image');
+        Storage::disk('public')->put('documents/second-guarantor-passport.jpg', 'second guarantor passport image');
 
         $admin = User::factory()->create(['role' => 'admin']);
         $driver = Driver::factory()->create([
             'ghana_card_file' => 'documents/ghana-card.jpg',
+            'guarantor_passport_file' => 'documents/guarantor-passport.jpg',
+            'second_guarantor_passport_file' => 'documents/second-guarantor-passport.jpg',
         ]);
 
         $response = $this->actingAs($admin)->get(route('admin.documents.show', [
@@ -33,12 +37,40 @@ class AdminSubmittedDocumentTest extends TestCase
         $response->assertHeader('Content-Disposition', 'inline; filename=ghana-card.jpg');
 
         $this->actingAs($admin)
+            ->get(route('admin.documents.show', [
+                'type' => 'driver',
+                'id' => $driver->id,
+                'field' => 'guarantor_passport_file',
+            ]))
+            ->assertOk()
+            ->assertHeader('Content-Disposition', 'inline; filename=guarantor-passport.jpg');
+
+        $this->actingAs($admin)
+            ->get(route('admin.documents.show', [
+                'type' => 'driver',
+                'id' => $driver->id,
+                'field' => 'second_guarantor_passport_file',
+            ]))
+            ->assertOk()
+            ->assertHeader('Content-Disposition', 'inline; filename=second-guarantor-passport.jpg');
+
+        $this->actingAs($admin)
             ->get(route('admin.drivers.detail', $driver))
             ->assertOk()
             ->assertSee(route('admin.documents.show', [
                 'type' => 'driver',
                 'id' => $driver->id,
                 'field' => 'ghana_card_file',
+            ]))
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'driver',
+                'id' => $driver->id,
+                'field' => 'guarantor_passport_file',
+            ]))
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'driver',
+                'id' => $driver->id,
+                'field' => 'second_guarantor_passport_file',
             ]));
 
         $this->actingAs($admin)

@@ -206,6 +206,15 @@
                                         @error('guarantor_ghana_card_file') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
+                                    <div class="col-md-6">
+                                        <label for="guarantor_passport_file" class="form-label">Guarantor Passport Photo * (Required)</label>
+                                        <input type="file" class="form-control @error('guarantor_passport_file') is-invalid @enderror"
+                                               id="guarantor_passport_file" name="guarantor_passport_file"
+                                               accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" required>
+                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload a clear passport-style photo (max 5MB).</small>
+                                        @error('guarantor_passport_file') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+
                                     <div class="col-md-12">
                                         <label for="relationship" class="form-label">Relationship to Guarantor * (Required)</label>
                                         <select class="form-select @error('relationship') is-invalid @enderror" 
@@ -256,6 +265,14 @@
                                                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" required>
                                         <small class="text-muted d-block mt-1">Upload a photo or PDF (max 5MB).</small>
                                         @error('second_guarantor_ghana_card_file') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="second_guarantor_passport_file" class="form-label">Second Guarantor Passport Photo *</label>
+                                        <input type="file" class="form-control @error('second_guarantor_passport_file') is-invalid @enderror"
+                                               id="second_guarantor_passport_file" name="second_guarantor_passport_file"
+                                               accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" required>
+                                        <small class="text-muted d-block mt-1">Upload a clear passport-style photo (max 5MB).</small>
+                                        @error('second_guarantor_passport_file') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                     <div class="col-md-12">
                                         <label for="second_relationship" class="form-label">Relationship to Second Guarantor *</label>

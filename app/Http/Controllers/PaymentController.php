@@ -57,11 +57,13 @@ class PaymentController extends Controller
             'guarantor_phone' => 'required|string|max:20',
             'g_ghana_card_no' => 'required|string|regex:/^GHA-\d{9}-\d$/',
             'guarantor_ghana_card_file' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'guarantor_passport_file' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'relationship' => 'required|in:family,employer,friend,colleague',
             'second_guarantor' => 'required|string|max:255',
             'second_guarantor_phone' => 'required|string|max:20',
             'second_g_ghana_card_no' => 'required|string|regex:/^GHA-\d{9}-\d$/',
             'second_guarantor_ghana_card_file' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'second_guarantor_passport_file' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'second_relationship' => 'required|in:family,employer,friend,colleague',
         ]);
 
@@ -84,7 +86,9 @@ class PaymentController extends Controller
             'ghana_card_file',
             'passport_file',
             'guarantor_ghana_card_file',
+            'guarantor_passport_file',
             'second_guarantor_ghana_card_file',
+            'second_guarantor_passport_file',
         ];
         foreach ($fileFields as $field) {
             if ($request->hasFile($field)) {
@@ -540,9 +544,9 @@ class PaymentController extends Controller
                     'license_number', 'license_expiry', 'license_class', 'experience_years',
                     'emergency_person', 'emergency_phone', 'bio', 'profile_picture',
                     'guarantor', 'guarantor_phone', 'g_ghana_card_no',
-                    'guarantor_ghana_card_file', 'relationship',
+                    'guarantor_ghana_card_file', 'guarantor_passport_file', 'relationship',
                     'second_guarantor', 'second_guarantor_phone', 'second_g_ghana_card_no',
-                    'second_guarantor_ghana_card_file', 'second_relationship',
+                    'second_guarantor_ghana_card_file', 'second_guarantor_passport_file', 'second_relationship',
                 ];
                 $missingFields = array_filter($requiredFields, function ($field) use ($sanitizedData) {
                     if (!array_key_exists($field, $sanitizedData)) {

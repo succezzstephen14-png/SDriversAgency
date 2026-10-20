@@ -237,6 +237,15 @@
                                     @if($driver->guarantor_ghana_card_file)
                                         <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'guarantor_ghana_card_file']) }}" target="_blank">🪪 Guarantor ID</a>
                                     @endif
+                                    @if($driver->guarantor_passport_file)
+                                        <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'guarantor_passport_file']) }}" target="_blank">📷 Guarantor Passport</a>
+                                    @endif
+                                    @if($driver->second_guarantor_ghana_card_file)
+                                        <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'second_guarantor_ghana_card_file']) }}" target="_blank">🪪 Second Guarantor ID</a>
+                                    @endif
+                                    @if($driver->second_guarantor_passport_file)
+                                        <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'second_guarantor_passport_file']) }}" target="_blank">📷 Second Guarantor Passport</a>
+                                    @endif
                                     @if($driver->getProfilePictureUrl())
                                         <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => $driver->profile_picture ? 'profile_picture' : 'profile_image']) }}" target="_blank">🖼️ Photo</a>
                                     @endif
