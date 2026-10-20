@@ -43,6 +43,7 @@ class User extends Authenticatable
         'latitude',
         'longitude',
         'last_location_update',
+        'pending_profile_changes',
     ];
 
     /**
@@ -68,6 +69,7 @@ class User extends Authenticatable
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
             'last_location_update' => 'datetime',
+            'pending_profile_changes' => 'array',
         ];
     }
 
@@ -160,6 +162,25 @@ class User extends Authenticatable
     public function alerts()
     {
         return $this->hasMany(Notification::class)->latest();
+    }
+
+    public function syncOnboardingStatus(): void
+    {
+        $completed = $this->isAdmin()
+            || (!empty($this->phone)
+                && !empty($this->address)
+                && $this->driver()->where('status', 'available')->exists()
+                && $this->vehicles()->count() > 0
+                && $this->recruitments()->count() > 0);
+
+        $attributes = ['onboarding_completed' => $completed];
+        if ($completed && empty($this->onboarded_at)) {
+            $attributes['onboarded_at'] = now();
+        }
+
+        if ($this->onboarding_completed !== $completed || (!empty($attributes['onboarded_at']) && empty($this->onboarded_at))) {
+            $this->update($attributes);
+        }
     }
 
     /**

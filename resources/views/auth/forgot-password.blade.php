@@ -169,6 +169,14 @@
             <p class="subtitle">Enter your email address and we'll send you a link to reset your password.</p>
         </div>
 
+        @if(session('success'))
+            <div class="alert alert-success" role="status">{{ session('success') }}</div>
+        @endif
+
+        @if($errors->has('email'))
+            <div class="alert alert-danger" role="alert">{{ $errors->first('email') }}</div>
+        @endif
+
         <form method="POST" action="{{ route('password.email') }}">
             @csrf
 
@@ -176,7 +184,7 @@
                 <label for="email">Email</label>
                 <div class="input-wrapper">
                     <i class="fas fa-envelope"></i>
-                    <input id="email" type="email" class="form-control" name="email" value="{{ old('email') }}" required autofocus placeholder="Enter your email">
+                    <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autofocus placeholder="Enter your email">
                 </div>
             </div>
 

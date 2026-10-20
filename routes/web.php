@@ -11,36 +11,26 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExportController;
 
+Route::domain(config('admin.domain'))->group(function () {
+    Route::get('/login', [AuthController::class, 'adminLoginForm'])->name('admin.login');
+    Route::post('/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
+    Route::get('/cms/login', [AuthController::class, 'cmsLoginForm'])->name('cms.login');
+    Route::post('/cms/login', [AuthController::class, 'cmsLogin'])->name('cms.login.post');
+    Route::get('/', fn () => auth()->check()
+        ? redirect()->route('admin.dashboard')
+        : redirect()->route('admin.login'))->name('admin.home');
+});
+
 // Public routes
-Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-
-// Temporary debug route to diagnose admin create recruitment 404 issues
-Route::get('/admin/recruitments/create-debug-info', function () {
-    $route = app('router')->getRoutes()->getByName('admin.recruitments.create');
-    return response()->json([
-        'route_registered' => $route ? true : false,
-        'route_uri' => $route ? $route->uri() : null,
-        'route_action' => $route ? (string) $route->getActionName() : null,
-        'current_user' => auth()->check() ? auth()->user()->only(['id','email','role']) : null,
-        'is_admin' => auth()->check() ? auth()->user()->isAdmin() : null,
-    ]);
+Route::middleware('dashboard.only')->group(function () {
+    Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+    Route::post('/contact', [App\Http\Controllers\HomeController::class, 'contact'])->name('contact.store');
+    Route::get('/privacy-policy', [App\Http\Controllers\HomeController::class, 'privacyPolicy'])->name('privacy.policy');
+    Route::get('/terms-and-conditions', [App\Http\Controllers\HomeController::class, 'termsAndConditions'])->name('terms.conditions');
 });
-
-// Temporary public route to render the admin create form for debugging (remove in production)
-Route::middleware('auth')->get('/admin/recruitments/create-temp', function () {
-    $recruitment = new App\Models\Recruitment();
-    return view('admin.recruitment-edit', compact('recruitment'));
-});
-Route::post('/contact', [App\Http\Controllers\HomeController::class, 'contact'])->name('contact.store');
-Route::get('/privacy-policy', [App\Http\Controllers\HomeController::class, 'privacyPolicy'])->name('privacy.policy');
-Route::get('/terms-and-conditions', [App\Http\Controllers\HomeController::class, 'termsAndConditions'])->name('terms.conditions');
 
 Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::get('/admin/login', [AuthController::class, 'adminLoginForm'])->name('admin.login');
-Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
-Route::get('/cms/login', [AuthController::class, 'cmsLoginForm'])->name('cms.login');
-Route::post('/cms/login', [AuthController::class, 'cmsLogin'])->name('cms.login.post');
 Route::get('/register', [AuthController::class, 'registerForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -60,26 +50,21 @@ Route::get('/auth/apple/callback', [AuthController::class, 'handleAppleCallback'
 Route::get('/profile', [AuthController::class, 'profile'])->name('profile')->middleware('auth');
 Route::get('/profile/edit', [AuthController::class, 'profileEdit'])->name('profile.edit')->middleware('auth');
 Route::put('/profile', [AuthController::class, 'profileUpdate'])->name('profile.update')->middleware('auth');
+Route::put('/profile/password', [AuthController::class, 'updatePassword'])->name('profile.password.update')->middleware('auth');
 Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard')->middleware('auth');
 Route::get('/onboarding', [AuthController::class, 'onboarding'])->name('onboarding')->middleware('auth');
 
-// Vehicles public routes
-Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
-Route::get('/vehicles/search', [VehicleController::class, 'search'])->name('vehicles.search');
-
-// Drivers public routes
-Route::get('/drivers', [DriverController::class, 'index'])->name('drivers.index');
-Route::get('/drivers/search', [DriverController::class, 'search'])->name('drivers.search');
-
-// Recruitments public routes
-Route::get('/recruitments', [RecruitmentController::class, 'index'])->name('recruitments.index');
-Route::get('/recruitments/search', [RecruitmentController::class, 'search'])->name('recruitments.search');
-// Guest recruitment request (submit a recruitment posting request for admin review)
-Route::get('/recruitments/request', [RecruitmentController::class, 'requestForm'])->name('recruitments.request-form');
-Route::post('/recruitments/request', [RecruitmentController::class, 'storeRequest'])->name('recruitments.request.store');
-
-// Book services
-Route::get('/book', [BookingController::class, 'index'])->name('book.index');
+Route::middleware('dashboard.only')->group(function () {
+    Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
+    Route::get('/vehicles/search', [VehicleController::class, 'search'])->name('vehicles.search');
+    Route::get('/drivers', [DriverController::class, 'index'])->name('drivers.index');
+    Route::get('/drivers/search', [DriverController::class, 'search'])->name('drivers.search');
+    Route::get('/recruitments', [RecruitmentController::class, 'index'])->name('recruitments.index');
+    Route::get('/recruitments/search', [RecruitmentController::class, 'search'])->name('recruitments.search');
+    Route::get('/recruitments/request', [RecruitmentController::class, 'requestForm'])->name('recruitments.request-form');
+    Route::post('/recruitments/request', [RecruitmentController::class, 'storeRequest'])->name('recruitments.request.store');
+    Route::get('/book', [BookingController::class, 'index'])->name('book.index');
+});
 
 // Guest-accessible booking and application routes
 Route::get('/book/{type}/{id}', [BookingController::class, 'showBookingPage'])
@@ -173,16 +158,16 @@ Route::middleware('auth')->group(function () {
 Route::get('/vehicles/{vehicle}/images/{index}', [VehicleController::class, 'showImage'])
     ->whereNumber('index')
     ->name('vehicles.images.show');
-Route::get('/vehicles/{vehicle}', [VehicleController::class, 'show'])->name('vehicles.show');
+Route::middleware('dashboard.only')->get('/vehicles/{vehicle}', [VehicleController::class, 'show'])->name('vehicles.show');
 
 // Drivers public show route after fixed routes
-Route::get('/drivers/{driver}', [DriverController::class, 'show'])->name('drivers.show');
+Route::middleware('dashboard.only')->get('/drivers/{driver}', [DriverController::class, 'show'])->name('drivers.show');
 
 // Recruitments public show route after fixed routes
-Route::get('/recruitments/{recruitment}', [RecruitmentController::class, 'show'])->name('recruitments.show');
+Route::middleware('dashboard.only')->get('/recruitments/{recruitment}', [RecruitmentController::class, 'show'])->name('recruitments.show');
 
 // Admin routes
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+Route::domain(config('admin.domain'))->middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Recruitment request review (approve/reject guest-submitted requests)
     Route::post('/recruitment-requests/{request}/approve', [\App\Http\Controllers\AdminController::class, 'approveRecruitmentRequest'])->name('recruitment-requests.approve');
     Route::post('/recruitment-requests/{request}/reject', [\App\Http\Controllers\AdminController::class, 'rejectRecruitmentRequest'])->name('recruitment-requests.reject');
@@ -193,12 +178,19 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->where('type', 'driver|vehicle|recruitment|booking')
         ->where('index', '[0-9]+')
         ->name('documents.show');
+    Route::get('/pending-application-documents/{type}/{id}/{field}/{index?}', [AdminController::class, 'viewPendingApplicationDocument'])
+        ->where('type', 'driver|vehicle')
+        ->where('index', '[0-9]+')
+        ->name('application-changes.documents.show');
     Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
     
     // Admin user management
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::get('/users/{user}/details', [AdminController::class, 'userDetails'])->name('users.details');
     Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+    Route::post('/users/{user}/profile-changes/approve', [AdminController::class, 'approveUserProfileChanges'])->name('users.profile-changes.approve');
+    Route::post('/users/{user}/profile-changes/reject', [AdminController::class, 'rejectUserProfileChanges'])->name('users.profile-changes.reject');
+    Route::post('/users/{user}/password-reset-link', [AdminController::class, 'createUserPasswordResetLink'])->name('users.password-reset-link');
     Route::get('/users/{user}', [AdminController::class, 'editUser'])->name('users.edit');
     Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
     Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.delete');
@@ -222,11 +214,16 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Legacy pending approval routes (keeping for backward compatibility)
     Route::get('/pending-drivers', [AdminController::class, 'pendingDrivers'])->name('pending-drivers');
     Route::get('/drivers/{driver}', [AdminController::class, 'driverDetail'])->name('drivers.detail');
+    Route::put('/drivers/{driver}/vetting-checks', [AdminController::class, 'saveDriverVettingChecks'])->name('drivers.vetting-checks.update');
+    Route::post('/drivers/{driver}/application-changes/approve', [AdminController::class, 'approveDriverApplicationChanges'])->name('drivers.application-changes.approve');
+    Route::post('/drivers/{driver}/application-changes/reject', [AdminController::class, 'rejectDriverApplicationChanges'])->name('drivers.application-changes.reject');
     Route::post('/drivers/{driver}/approve', [AdminController::class, 'approveDriver'])->name('drivers.approve');
     Route::post('/drivers/{driver}/reject', [AdminController::class, 'rejectDriver'])->name('drivers.reject');
     
     Route::get('/pending-vehicles', [AdminController::class, 'pendingVehicles'])->name('pending-vehicles');
     Route::get('/vehicles/{vehicle}', [AdminController::class, 'vehicleDetail'])->name('vehicles.detail');
+    Route::post('/vehicles/{vehicle}/application-changes/approve', [AdminController::class, 'approveVehicleApplicationChanges'])->name('vehicles.application-changes.approve');
+    Route::post('/vehicles/{vehicle}/application-changes/reject', [AdminController::class, 'rejectVehicleApplicationChanges'])->name('vehicles.application-changes.reject');
     Route::post('/vehicles/{vehicle}/approve', [AdminController::class, 'approveVehicle'])->name('vehicles.approve');
     Route::post('/vehicles/{vehicle}/reject', [AdminController::class, 'rejectVehicle'])->name('vehicles.reject');
     
@@ -302,7 +299,7 @@ Route::middleware('auth')->post('/location/update', [App\Http\Controllers\Locati
 // CMS - Content Management System for cms_admin
 use App\Http\Controllers\CmsController;
 use App\Http\Controllers\WebsiteController;
-Route::middleware(['auth', 'cms_admin'])->prefix('cms')->name('cms.')->group(function () {
+Route::domain(config('admin.domain'))->middleware(['auth', 'cms_admin'])->prefix('cms')->name('cms.')->group(function () {
     // CMS Dashboard
     Route::get('/', [CmsController::class, 'dashboard'])->name('dashboard');
     
@@ -380,14 +377,14 @@ Route::middleware(['auth', 'cms_admin'])->prefix('cms')->name('cms.')->group(fun
 });
 
 // Site settings (kept for backward compatibility, redirects to CMS dashboard)
-Route::middleware(['auth', 'cms_admin'])->group(function () {
+Route::domain(config('admin.domain'))->middleware(['auth', 'cms_admin'])->group(function () {
     Route::get('/site-settings', [AdminController::class, 'siteSettings'])->name('site-settings');
     Route::post('/site-settings', [AdminController::class, 'updateSiteSettings'])->name('site-settings.update');
 });
 
 // Roles and Permissions Management (Super Admin only)
 use App\Http\Controllers\RoleController;
-Route::middleware(['auth'])->prefix('admin/roles')->name('roles.')->group(function () {
+Route::domain(config('admin.domain'))->middleware(['auth'])->prefix('admin/roles')->name('roles.')->group(function () {
     Route::get('/', [RoleController::class, 'index'])->name('index');
     Route::get('/create', [RoleController::class, 'create'])->name('create');
     Route::post('/', [RoleController::class, 'store'])->name('store');
@@ -402,4 +399,4 @@ Route::middleware(['auth'])->prefix('admin/roles')->name('roles.')->group(functi
 // These routes are now under /cms/website-* with cms_admin middleware
 
 // CMS Dynamic Page Route - MUST BE LAST (matches after all specific routes)
-Route::get('/{page}', [App\Http\Controllers\HomeController::class, 'showPage'])->name('cms.page');
+Route::middleware('dashboard.only')->get('/{page}', [App\Http\Controllers\HomeController::class, 'showPage'])->name('cms.page');

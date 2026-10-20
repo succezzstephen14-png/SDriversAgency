@@ -103,13 +103,15 @@ php artisan serve
 3. **Add Vehicles** at `/vehicles/create`
 4. **Create Driver Profile** at `/drivers/create`
 5. **Post Jobs** at `/recruitments/create`
-6. **Search** for vehicles, drivers, and jobs
+6. Public website pages redirect signed-in regular users to their dashboard. Log out to browse public listings.
 
 ### For Admin Users
-1. **Login** as admin
-2. **Access** `/admin/dashboard`
+1. **Login** at `https://admin.succezzdriversagency.com/login`
+2. **Access** the admin dashboard at `https://admin.succezzdriversagency.com/admin/dashboard`
 3. **Manage** users, vehicles, drivers, recruitments
 4. **View** analytics and statistics
+
+The admin subdomain must be added to the Hostinger website and use the Laravel `public` directory as its document root. Add HTTPS for the subdomain after DNS is active. `ADMIN_DOMAIN` controls which host Laravel uses for admin and CMS routes.
 
 ## 🔌 API Endpoints
 
@@ -217,6 +219,7 @@ php artisan optimize             # Optimize
 
 ### 1. Vehicle Management
 - Create, read, update, delete vehicles
+- Updates to approved vehicle listings remain pending until an administrator reviews them
 - Vehicle types: car, van, truck, motorcycle
 - Status tracking: available, unavailable, maintenance
 - Live search functionality
@@ -224,6 +227,7 @@ php artisan optimize             # Optimize
 
 ### 2. Driver Management
 - Complete driver profiles
+- Updates to approved driver profiles remain pending until an administrator reviews them
 - License tracking with expiry dates
 - 5-star rating system
 - Trip counter
@@ -238,6 +242,8 @@ php artisan optimize             # Optimize
 
 ### 4. Admin Dashboard
 - User management with role assignment
+- Review and approve or reject user account, driver, and vehicle profile changes
+- Generate one-time password reset links for users
 - Vehicle moderation tools
 - Driver profile moderation
 - Recruitment post management
@@ -306,14 +312,31 @@ production Composer dependencies, and run migrations from Hostinger Terminal
 when available. Generate `APP_KEY` once and keep the same key for the life of
 the application.
 
-Set `SYSTEM_ADMIN_EMAIL` and `SYSTEM_ADMIN_PASSWORD` in the server `.env` to
-configure the seeded administrator. Then run
-`php artisan config:clear` followed by
-`php artisan db:seed --class=AdminAccountsSeeder --force` from the project root
-to create or update the admin and CMS accounts. The seeder reuses the existing
-default admin record when changing its email. Login requests do not re-seed or
-reset account passwords. Keep the password out of Git and rotate it after the
-first login.
+Set `SYSTEM_ADMIN_EMAIL`, `SYSTEM_ADMIN_PASSWORD`, `CMS_ADMIN_EMAIL`, and
+`CMS_ADMIN_PASSWORD` in the server `.env`; passwords must not be committed to
+Git. A deployment does not run database seeders automatically. After deploying
+code and setting these server variables, run the following from the project
+root to create or update the admin and CMS accounts:
+
+```bash
+php artisan config:clear
+php artisan db:seed --class=AdminAccountsSeeder --force
+```
+
+The seeder reuses the existing default admin record when changing its email.
+Login requests do not re-seed or reset account passwords. Rotate seeded
+passwords after the first login.
+
+### Password reset email
+
+The example environment uses Laravel's `log` mailer for local development, so
+password reset messages are written to the application log instead of being
+delivered. To send reset links from production, configure the mail settings in
+the server's `.env` with your SMTP provider's host, port, encryption scheme,
+username, password, and an authorized sender address (`MAIL_FROM_ADDRESS`).
+Then run `php artisan config:clear` from the project root. Never commit live
+SMTP credentials to Git. After requesting a reset, check the recipient's spam
+folder and the server mail/application logs if the message does not arrive.
 
 ## 📞 Support
 

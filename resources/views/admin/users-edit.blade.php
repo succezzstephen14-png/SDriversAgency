@@ -161,6 +161,36 @@
         border: 1px solid #fca5a5;
     }
 
+    .alert-success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+    }
+
+    .review-values {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .review-value {
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    .review-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .reset-link-field {
+        overflow-wrap: anywhere;
+    }
+
     @media (max-width: 1280px) {
         .admin-wrapper {
             flex-direction: column;
@@ -195,6 +225,42 @@
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="alert alert-success" role="status">{{ session('success') }}</div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
+        @endif
+
+        @if($user->pending_profile_changes)
+            <div class="panel">
+                <h3><i class="fas fa-user-clock"></i> Profile Changes Awaiting Review</h3>
+                <p>These values are not active yet. Approving applies them to the account; rejecting leaves the current approved details unchanged.</p>
+                <div class="review-values">
+                    @foreach(['name' => 'Name', 'phone' => 'Phone', 'address' => 'Address'] as $field => $label)
+                        @if(array_key_exists($field, $user->pending_profile_changes))
+                            <div class="review-value">
+                                <strong>{{ $label }}</strong>
+                                <div><span class="text-muted">Current:</span> {{ $user->{$field} ?: 'Not provided' }}</div>
+                                <div><span class="text-muted">Requested:</span> {{ $user->pending_profile_changes[$field] ?: 'Not provided' }}</div>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+                <div class="review-actions">
+                    <form action="{{ route('admin.users.profile-changes.approve', $user) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-primary">Approve Profile Changes</button>
+                    </form>
+                    <form action="{{ route('admin.users.profile-changes.reject', $user) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-secondary">Reject Changes</button>
+                    </form>
+                </div>
             </div>
         @endif
 
@@ -237,7 +303,22 @@
                 </div>
             </form>
         </div>
+
+        <div class="panel">
+            <h3><i class="fas fa-key"></i> Reset User Password</h3>
+            <p>Generate a secure, single-use reset link for {{ $user->name }}. Share it with the user through a private channel.</p>
+            <form action="{{ route('admin.users.password-reset-link', $user) }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-primary">Generate Password Reset Link</button>
+            </form>
+            @if(session('user_password_reset_link'))
+                <div class="form-group mt-3">
+                    <label for="user-password-reset-link">One-time reset link</label>
+                    <input class="reset-link-field" id="user-password-reset-link" type="text" readonly value="{{ session('user_password_reset_link') }}" onclick="this.select()">
+                    <small>Copy this link and send it only to the intended user. It expires and can be used once.</small>
+                </div>
+            @endif
+        </div>
     </section>
 </div>
 @endsection
-

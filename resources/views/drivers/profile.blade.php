@@ -11,9 +11,26 @@
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h3 class="mb-1">{{ $driver->user?->name ?? 'Driver Profile' }}</h3>
-                                <p class="mb-0 small">License: {{ $driver->license_number }} • Class {{ $driver->license_class }}</p>
+                            <div class="d-flex align-items-center gap-3">
+                                @if($driver->getProfilePictureUrl())
+                                    <img
+                                        src="{{ $driver->getProfilePictureUrl() }}"
+                                        alt="{{ $driver->user?->name ?? 'Driver' }} profile picture"
+                                        class="rounded-circle border border-3 border-white"
+                                        style="width:88px;height:88px;object-fit:cover;"
+                                    >
+                                @else
+                                    <div
+                                        class="rounded-circle border border-3 border-white d-flex align-items-center justify-content-center"
+                                        role="img"
+                                        aria-label="No profile picture uploaded"
+                                        style="width:88px;height:88px;background:rgba(255,255,255,.2);font-size:2rem;font-weight:700;"
+                                    >{{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($driver->user?->name ?? 'D', 0, 1)) }}</div>
+                                @endif
+                                <div>
+                                    <h3 class="mb-1">{{ $driver->user?->name ?? 'Driver Profile' }}</h3>
+                                    <p class="mb-0 small">License: {{ $driver->license_number }} • Class {{ $driver->license_class }}</p>
+                                </div>
                             </div>
                             <div class="text-end">
                                 @if($driver->status === 'available')
@@ -147,9 +164,9 @@
                     <div class="card-body">
                         @if($driver->getProfilePictureUrl())
                             <div class="mb-3">
-                                <label class="form-label">Profile Image</label>
+                                <label class="form-label">Your Profile Picture</label>
                                 <div>
-                                    <img src="{{ $driver->getProfilePictureUrl() }}" alt="Profile" class="img-fluid rounded" style="max-width: 200px;">
+                                    <img src="{{ $driver->getProfilePictureUrl() }}" alt="{{ $driver->user?->name ?? 'Driver' }} profile picture" class="img-fluid rounded" style="width: 200px;height:200px;object-fit:cover;">
                                 </div>
                             </div>
                         @endif

@@ -14,7 +14,7 @@
                     <!-- Payment Notice -->
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Payment Required:</strong> Adding a vehicle requires a one-time payment of <strong>{{ config('app.currency_label', 'GHC') }} 30.00</strong> for verification and approval. Your vehicle will be submitted for admin approval after successful payment.
+                        <strong>Payment Required:</strong> Adding a vehicle requires a one-time payment of <strong>{{ config('app.currency_label', 'GHC') }} 0.20</strong> for verification and approval. Your vehicle will be submitted for admin approval after successful payment.
                     </div>
 
                     @if ($errors->any())
@@ -103,9 +103,9 @@
                                         <label for="license_plate" class="form-label">License Plate <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control @error('license_plate') is-invalid @enderror" 
                                                id="license_plate" name="license_plate" value="{{ old('license_plate') }}" 
-                                               placeholder="e.g., GH-2023-ABC-1234" required maxlength="20">
+                                               placeholder="e.g., 2301-GR1 or AS 2567-12" required maxlength="20">
                                         @error('license_plate') <small class="text-danger">{{ $message }}</small> @enderror
-                                        <small class="form-text text-muted">Must be unique and not exceed 20 characters</small>
+                                        <small class="form-text text-muted">Use a Ghana plate format such as 2301-GR1 or AS 2567-12. Must be unique.</small>
                                     </div>
 
                                     <div class="col-md-6">
@@ -120,8 +120,10 @@
                                         <label for="vin" class="form-label">VIN (Vehicle Identification Number)</label>
                                         <input type="text" class="form-control @error('vin') is-invalid @enderror" 
                                                id="vin" name="vin" value="{{ old('vin') }}" 
-                                               placeholder="17-character VIN">
+                                               placeholder="17 uppercase letters/numbers, excluding I, O, Q"
+                                               pattern="[A-HJ-NPR-Z0-9]{17}" minlength="17" maxlength="17">
                                         @error('vin') <small class="text-danger">{{ $message }}</small> @enderror
+                                        <small class="form-text text-muted">Must be exactly 17 characters; do not use I, O, or Q.</small>
                                     </div>
                                 </div>
                             </div>
@@ -220,55 +222,62 @@
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label for="registration_expiry" class="form-label">Registration Expiry</label>
+                                        <label for="registration_date" class="form-label">Registration Date <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control @error('registration_date') is-invalid @enderror"
+                                               id="registration_date" name="registration_date" value="{{ old('registration_date') }}" required>
+                                        @error('registration_date') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="registration_expiry" class="form-label">Registration Expiry <span class="text-danger">*</span></label>
                                         <input type="date" class="form-control @error('registration_expiry') is-invalid @enderror" 
-                                               id="registration_expiry" name="registration_expiry" value="{{ old('registration_expiry') }}">
+                                               id="registration_expiry" name="registration_expiry" value="{{ old('registration_expiry') }}" required>
                                         @error('registration_expiry') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label for="insurance_expiry" class="form-label">Insurance Expiry</label>
+                                        <label for="insurance_expiry" class="form-label">Insurance Expiry <span class="text-danger">*</span></label>
                                         <input type="date" class="form-control @error('insurance_expiry') is-invalid @enderror" 
-                                               id="insurance_expiry" name="insurance_expiry" value="{{ old('insurance_expiry') }}">
+                                               id="insurance_expiry" name="insurance_expiry" value="{{ old('insurance_expiry') }}" required>
                                         @error('insurance_expiry') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label for="inspection_expiry" class="form-label">Roadworthiness Expiry</label>
+                                        <label for="inspection_expiry" class="form-label">Roadworthiness Expiry <span class="text-danger">*</span></label>
                                         <input type="date" class="form-control @error('inspection_expiry') is-invalid @enderror" 
-                                               id="inspection_expiry" name="inspection_expiry" value="{{ old('inspection_expiry') }}">
+                                               id="inspection_expiry" name="inspection_expiry" value="{{ old('inspection_expiry') }}" required>
                                         @error('inspection_expiry') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
                                     <div class="col-md-6">
                                         <label for="registration_document" class="form-label">Registration Certificate * (Required)</label>
                                         <input type="file" class="form-control @error('registration_document') is-invalid @enderror" 
-                                               id="registration_document" name="registration_document" accept="image/*" required>
-                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload clear copy of vehicle registration certificate (PNG, JPG, GIF, max 2MB).</small>
+                                               id="registration_document" name="registration_document" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" required>
+                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload a photo or PDF of the vehicle registration certificate (max 5MB).</small>
                                         @error('registration_document') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
                                     <div class="col-md-6">
                                         <label for="insurance_document" class="form-label">Insurance Document * (Required)</label>
                                         <input type="file" class="form-control @error('insurance_document') is-invalid @enderror" 
-                                               id="insurance_document" name="insurance_document" accept="image/*" required>
-                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload current insurance certificate (PNG, JPG, GIF, max 2MB).</small>
+                                               id="insurance_document" name="insurance_document" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" required>
+                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload a photo or PDF of the current insurance certificate (max 5MB).</small>
                                         @error('insurance_document') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
                                     <div class="col-md-6">
                                         <label for="roadworthiness_certificate" class="form-label">Roadworthiness Certificate * (Required)</label>
                                         <input type="file" class="form-control @error('roadworthiness_certificate') is-invalid @enderror" 
-                                               id="roadworthiness_certificate" name="roadworthiness_certificate" accept="image/*" required>
-                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload roadworthiness/inspection certificate (PNG, JPG, GIF, max 2MB).</small>
+                                               id="roadworthiness_certificate" name="roadworthiness_certificate" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" required>
+                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload a photo or PDF of the roadworthiness/inspection certificate (max 5MB).</small>
                                         @error('roadworthiness_certificate') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label for="image_url" class="form-label">Vehicle Images (Optional)</label>
+                                        <label for="image_url" class="form-label">Vehicle Images <span class="text-danger">*</span></label>
                                         <input type="file" class="form-control @error('image_url') is-invalid @enderror"
-                                               id="image_url" name="image_url[]" accept="image/*" multiple>
-                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload multiple photos of your vehicle from different angles.</small>
+                                               id="image_url" name="image_url[]" accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" multiple required>
+                                        <small class="text-muted d-block mt-1"><i class="fas fa-info-circle"></i> Upload at least one vehicle photo (max 5MB per photo).</small>
                                         @error('image_url') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
                                 </div>
@@ -296,7 +305,7 @@
                         <div class="mt-4 d-flex justify-content-between">
                             <a href="{{ route('vehicles.my-vehicles') }}" class="btn btn-secondary">Back</a>
                             <button type="submit" class="btn btn-success">
-                                <i class="fas fa-credit-card me-2"></i>Proceed to Payment ({{ config('app.currency_label', 'GHC') }} 30.00)
+                                <i class="fas fa-credit-card me-2"></i>Proceed to Payment ({{ config('app.currency_label', 'GHC') }} 0.20)
                             </button>
                         </div>
                     </form>

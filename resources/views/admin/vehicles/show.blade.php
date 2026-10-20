@@ -103,6 +103,10 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <small class="text-muted d-block">Registration Date</small>
+                            <strong>{{ $vehicle->registration_date?->format('M d, Y') ?? '—' }}</strong>
+                        </div>
                         <div class="col-md-4 mb-3">
                             <small class="text-muted d-block">Registration Expiry</small>
                             @if($vehicle->registration_expiry)

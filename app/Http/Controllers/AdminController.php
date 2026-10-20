@@ -13,7 +13,9 @@ use App\Models\CmsReportSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password as PasswordFacade;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -201,10 +203,296 @@ class AdminController extends Controller
             'role' => 'required|in:user,admin',
         ]);
 
-        $user->update($validated);
+        $user->pending_profile_changes = null;
+        $user->fill($validated)->save();
 
         return redirect()->route('admin.users')
             ->with('success', 'User updated successfully!');
+    }
+
+    public function approveUserProfileChanges(User $user)
+    {
+        $changes = $user->pending_profile_changes;
+        $allowedChanges = ['name', 'phone', 'address'];
+        $changes = is_array($changes) ? array_intersect_key($changes, array_flip($allowedChanges)) : [];
+
+        if ($changes === []) {
+            return redirect()->route('admin.users.edit', $user)
+                ->with('error', 'This user has no profile changes awaiting review.');
+        }
+
+        $user->fill($changes);
+        $user->pending_profile_changes = null;
+        $user->save();
+        $user->syncOnboardingStatus();
+
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'Profile changes approved',
+            'message' => 'Your updated profile details have been approved by an administrator.',
+            'type' => 'system',
+            'status' => 'unread',
+        ]);
+
+        return redirect()->route('admin.users.edit', $user)
+            ->with('success', 'Profile changes approved and applied.');
+    }
+
+    public function rejectUserProfileChanges(User $user)
+    {
+        if (!$user->pending_profile_changes) {
+            return redirect()->route('admin.users.edit', $user)
+                ->with('error', 'This user has no profile changes awaiting review.');
+        }
+
+        $user->pending_profile_changes = null;
+        $user->save();
+
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'Profile changes not approved',
+            'message' => 'Your profile update was not approved. Please contact support if you need more information.',
+            'type' => 'system',
+            'status' => 'unread',
+        ]);
+
+        return redirect()->route('admin.users.edit', $user)
+            ->with('success', 'Profile changes rejected. The user’s approved details remain unchanged.');
+    }
+
+    public function createUserPasswordResetLink(User $user)
+    {
+        $token = PasswordFacade::broker()->createToken($user);
+        $resetLink = URL::route('password.reset', [
+            'token' => $token,
+            'email' => $user->email,
+        ]);
+
+        return redirect()->route('admin.users.edit', $user)
+            ->with('success', 'A password reset link was generated. Share it with the user through a secure channel.')
+            ->with('user_password_reset_link', $resetLink);
+    }
+
+    public function approveDriverApplicationChanges(Driver $driver)
+    {
+        $changes = $this->filterApplicationChanges($driver->pending_application_changes, [
+            'license_number', 'license_expiry', 'license_class', 'experience_years',
+            'status', 'bio', 'profile_picture',
+        ]);
+
+        if ($changes === []) {
+            return redirect()->route('admin.drivers.detail', $driver)
+                ->with('error', 'This driver has no application changes awaiting review.');
+        }
+
+        $pendingChanges = $driver->pending_application_changes;
+        $changes = $this->promotePendingApplicationFiles('driver', $changes);
+        $driver->fill($changes);
+        $driver->pending_application_changes = null;
+        $driver->save();
+        $this->deletePrivatePendingApplicationFiles('driver', $pendingChanges);
+
+        $this->notifyProfileReviewDecision($driver->user_id, 'Driver application changes approved', 'Your updated driver application details have been approved.');
+
+        return redirect()->route('admin.drivers.detail', $driver)
+            ->with('success', 'Driver application changes approved and applied.');
+    }
+
+    public function rejectDriverApplicationChanges(Driver $driver)
+    {
+        if (!$driver->pending_application_changes) {
+            return redirect()->route('admin.drivers.detail', $driver)
+                ->with('error', 'This driver has no application changes awaiting review.');
+        }
+
+        $this->deletePendingApplicationFiles('driver', $driver->pending_application_changes);
+        $driver->pending_application_changes = null;
+        $driver->save();
+
+        $this->notifyProfileReviewDecision($driver->user_id, 'Driver application changes not approved', 'Your driver application update was not approved. Your previously approved details remain active.');
+
+        return redirect()->route('admin.drivers.detail', $driver)
+            ->with('success', 'Driver application changes rejected. The approved details remain unchanged.');
+    }
+
+    public function approveVehicleApplicationChanges(Vehicle $vehicle)
+    {
+        $changes = $this->filterApplicationChanges($vehicle->pending_application_changes, [
+            'make', 'model', 'year', 'vehicle_type', 'color', 'license_plate',
+            'registration_number', 'vin', 'fuel_type', 'transmission', 'engine_size',
+            'capacity', 'number_of_seats', 'mileage', 'condition', 'status',
+            'registration_date', 'registration_expiry', 'insurance_expiry', 'inspection_expiry',
+            'registration_document', 'insurance_document', 'roadworthiness_certificate',
+            'image_url', 'description',
+        ]);
+
+        if ($changes === []) {
+            return redirect()->route('admin.vehicles.detail', $vehicle)
+                ->with('error', 'This vehicle has no application changes awaiting review.');
+        }
+
+        $pendingChanges = $vehicle->pending_application_changes;
+        $changes = $this->promotePendingApplicationFiles('vehicle', $changes);
+        $vehicle->fill($changes);
+        $vehicle->pending_application_changes = null;
+        $vehicle->save();
+        $this->deletePrivatePendingApplicationFiles('vehicle', $pendingChanges);
+
+        $this->notifyProfileReviewDecision($vehicle->user_id, 'Vehicle application changes approved', 'Your updated vehicle application details have been approved.');
+
+        return redirect()->route('admin.vehicles.detail', $vehicle)
+            ->with('success', 'Vehicle application changes approved and applied.');
+    }
+
+    public function rejectVehicleApplicationChanges(Vehicle $vehicle)
+    {
+        if (!$vehicle->pending_application_changes) {
+            return redirect()->route('admin.vehicles.detail', $vehicle)
+                ->with('error', 'This vehicle has no application changes awaiting review.');
+        }
+
+        $this->deletePendingApplicationFiles('vehicle', $vehicle->pending_application_changes);
+        $vehicle->pending_application_changes = null;
+        $vehicle->save();
+
+        $this->notifyProfileReviewDecision($vehicle->user_id, 'Vehicle application changes not approved', 'Your vehicle application update was not approved. Your previously approved details remain active.');
+
+        return redirect()->route('admin.vehicles.detail', $vehicle)
+            ->with('success', 'Vehicle application changes rejected. The approved details remain unchanged.');
+    }
+
+    public function viewPendingApplicationDocument(string $type, string $id, string $field, ?int $index = null)
+    {
+        abort_unless(in_array($type, ['driver', 'vehicle'], true), 404);
+
+        $model = $type === 'driver' ? Driver::findOrFail($id) : Vehicle::findOrFail($id);
+        $changes = $model->pending_application_changes ?? [];
+        $allowedFields = $type === 'driver'
+            ? ['profile_picture']
+            : ['registration_document', 'insurance_document', 'roadworthiness_certificate', 'image_url'];
+        abort_unless(in_array($field, $allowedFields, true), 404);
+        abort_unless(array_key_exists($field, $changes), 404);
+
+        $path = $changes[$field];
+        if ($field === 'image_url') {
+            abort_unless(is_array($path) && $index !== null && array_key_exists($index, $path), 404);
+            $path = $path[$index];
+        }
+
+        abort_unless(is_string($path), 404);
+        $disk = str_starts_with($path, 'private:') ? 'local' : 'public';
+        $path = $disk === 'local' ? substr($path, strlen('private:')) : $path;
+        abort_unless(Storage::disk($disk)->exists($path), 404);
+
+        return Storage::disk($disk)->response($path);
+    }
+
+    private function filterApplicationChanges(mixed $changes, array $allowedFields): array
+    {
+        return is_array($changes)
+            ? array_intersect_key($changes, array_flip($allowedFields))
+            : [];
+    }
+
+    private function deletePendingApplicationFiles(string $type, array $changes): void
+    {
+        $fileFields = $type === 'driver'
+            ? ['profile_picture']
+            : ['registration_document', 'insurance_document', 'roadworthiness_certificate'];
+
+        foreach ($fileFields as $field) {
+            if (isset($changes[$field]) && is_string($changes[$field])) {
+                $this->deletePendingApplicationFile($changes[$field]);
+            }
+        }
+
+        if ($type === 'vehicle' && isset($changes['image_url']) && is_array($changes['image_url'])) {
+            foreach (array_filter($changes['image_url'], 'is_string') as $path) {
+                $this->deletePendingApplicationFile($path);
+            }
+        }
+    }
+
+    private function deletePrivatePendingApplicationFiles(string $type, array $changes): void
+    {
+        $fileFields = $type === 'driver'
+            ? ['profile_picture']
+            : ['registration_document', 'insurance_document', 'roadworthiness_certificate'];
+
+        foreach ($fileFields as $field) {
+            if (isset($changes[$field]) && is_string($changes[$field]) && str_starts_with($changes[$field], 'private:')) {
+                Storage::disk('local')->delete(substr($changes[$field], strlen('private:')));
+            }
+        }
+
+        if ($type === 'vehicle' && isset($changes['image_url']) && is_array($changes['image_url'])) {
+            foreach ($changes['image_url'] as $path) {
+                if (is_string($path) && str_starts_with($path, 'private:')) {
+                    Storage::disk('local')->delete(substr($path, strlen('private:')));
+                }
+            }
+        }
+    }
+
+    private function promotePendingApplicationFiles(string $type, array $changes): array
+    {
+        $fileFields = $type === 'driver'
+            ? ['profile_picture']
+            : ['registration_document', 'insurance_document', 'roadworthiness_certificate'];
+
+        foreach ($fileFields as $field) {
+            if (isset($changes[$field]) && is_string($changes[$field])) {
+                $changes[$field] = $this->promotePendingApplicationFile($changes[$field]);
+            }
+        }
+
+        if ($type === 'vehicle' && isset($changes['image_url']) && is_array($changes['image_url'])) {
+            $changes['image_url'] = array_map(
+                fn ($path) => is_string($path) ? $this->promotePendingApplicationFile($path) : $path,
+                $changes['image_url']
+            );
+        }
+
+        return $changes;
+    }
+
+    private function promotePendingApplicationFile(string $path): string
+    {
+        if (!str_starts_with($path, 'private:')) {
+            return $path;
+        }
+
+        $privatePath = substr($path, strlen('private:'));
+        if (!Storage::disk('local')->exists($privatePath)) {
+            throw new \RuntimeException('An application document awaiting approval is missing.');
+        }
+        $contents = Storage::disk('local')->get($privatePath);
+        if (!Storage::disk('public')->put($privatePath, $contents)) {
+            throw new \RuntimeException('Unable to publish an approved application document.');
+        }
+
+        return $privatePath;
+    }
+
+    private function deletePendingApplicationFile(string $path): void
+    {
+        if (str_starts_with($path, 'private:')) {
+            Storage::disk('local')->delete(substr($path, strlen('private:')));
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
+    }
+
+    private function notifyProfileReviewDecision(int|string $userId, string $title, string $message): void
+    {
+        Notification::create([
+            'user_id' => $userId,
+            'title' => $title,
+            'message' => $message,
+            'type' => 'system',
+            'status' => 'unread',
+        ]);
     }
 
     /**
@@ -447,6 +735,8 @@ class AdminController extends Controller
                 'passport_file' => 'passport_file',
                 'guarantor_id' => 'guarantor_ghana_card_file',
                 'guarantor_ghana_card_file' => 'guarantor_ghana_card_file',
+                'second_guarantor_id' => 'second_guarantor_ghana_card_file',
+                'second_guarantor_ghana_card_file' => 'second_guarantor_ghana_card_file',
                 'profile_picture' => 'profile_picture',
                 'profile_image' => 'profile_image',
             ],
@@ -524,6 +814,37 @@ class AdminController extends Controller
     {
         $driver->load('user');
         return view('admin.driver-detail', compact('driver'));
+    }
+
+    /**
+     * Save an administrator's driver vetting checklist.
+     */
+    public function saveDriverVettingChecks(Request $request, Driver $driver)
+    {
+        $validated = $request->validate([
+            'checks' => [
+                'nullable',
+                'array',
+                function ($attribute, $value, $fail) {
+                    $unknownChecks = array_diff(array_keys($value), array_keys(Driver::VETTING_CHECKS));
+
+                    if ($unknownChecks !== []) {
+                        $fail('The submitted vetting checklist contains an invalid item.');
+                    }
+                },
+            ],
+            'checks.*' => ['accepted'],
+        ]);
+
+        $checks = array_fill_keys(array_keys(Driver::VETTING_CHECKS), false);
+
+        foreach (array_keys($validated['checks'] ?? []) as $check) {
+            $checks[$check] = true;
+        }
+
+        $driver->update(['vetting_checks' => $checks]);
+
+        return redirect()->back()->with('success', 'Driver vetting checklist saved.');
     }
 
     /**
@@ -1009,6 +1330,7 @@ class AdminController extends Controller
                         'ghana_card' => $driver->ghana_card_file,
                         'passport' => $driver->passport_file,
                         'guarantor_id' => $driver->guarantor_ghana_card_file,
+                        'second_guarantor_id' => $driver->second_guarantor_ghana_card_file,
                         'profile_picture' => $driver->profile_picture,
                     ],
                     'details' => [
@@ -1651,7 +1973,12 @@ class AdminController extends Controller
     public function updateDriverAdmin(Request $request, Driver $driver)
     {
         $validated = $request->validate([
-            'license_number' => 'required|string|unique:drivers,license_number,' . $driver->id,
+            'license_number' => [
+                'required',
+                'string',
+                'regex:/^ADB-\d{8}-\d{5}$/',
+                'unique:drivers,license_number,' . $driver->id,
+            ],
             'license_expiry' => 'required|date|after:today',
             'experience_years' => 'required|integer|min:0|max:60',
             'status' => 'required|in:available,unavailable,on_duty',
@@ -1682,10 +2009,18 @@ class AdminController extends Controller
             'model' => 'required|string|max:255',
             'year' => 'required|integer|min:1900|max:' . date('Y'),
             'vehicle_type' => 'required|in:car,van,truck,motorcycle',
-            'license_plate' => 'required|string|unique:vehicles,license_plate,' . $vehicle->id,
+            'license_plate' => [
+                'required',
+                'string',
+                'max:20',
+                'unique:vehicles,license_plate,' . $vehicle->id,
+                'regex:/^(?:\d{4}-[A-Z]{2}\d|[A-Z]{2}\s\d{4}-\d{2})$/i',
+            ],
             'status' => 'required|in:available,unavailable,maintenance,on_duty',
             'approval_status' => 'required|in:pending,approved,rejected',
             'capacity' => 'nullable|integer|min:1|max:100',
+        ], [
+            'license_plate.regex' => 'Use a valid Ghana plate format, e.g., "2301-GR1" or "AS 2567-12".',
         ]);
 
         $vehicle->update($validated);

@@ -145,6 +145,68 @@
         </div>
 
         <div class="review-body">
+            @if($vehicle->pending_application_changes)
+                @php
+                    $pendingVehicleLabels = [
+                        'make' => 'Make',
+                        'model' => 'Model',
+                        'year' => 'Year',
+                        'vehicle_type' => 'Vehicle type',
+                        'color' => 'Color',
+                        'license_plate' => 'License plate',
+                        'registration_number' => 'Registration number',
+                        'vin' => 'VIN',
+                        'fuel_type' => 'Fuel type',
+                        'transmission' => 'Transmission',
+                        'engine_size' => 'Engine size',
+                        'capacity' => 'Capacity',
+                        'number_of_seats' => 'Number of seats',
+                        'mileage' => 'Mileage',
+                        'condition' => 'Condition',
+                        'status' => 'Status',
+                        'registration_expiry' => 'Registration expiry',
+                        'registration_date' => 'Registration date',
+                        'insurance_expiry' => 'Insurance expiry',
+                        'inspection_expiry' => 'Inspection expiry',
+                        'registration_document' => 'Registration document',
+                        'insurance_document' => 'Insurance document',
+                        'roadworthiness_certificate' => 'Roadworthiness certificate',
+                        'image_url' => 'Vehicle images',
+                        'description' => 'Description',
+                    ];
+                    $pendingVehicleFiles = ['registration_document', 'insurance_document', 'roadworthiness_certificate'];
+                @endphp
+                <div class="detail-box border border-warning mb-3">
+                    <div class="detail-label">Vehicle application changes awaiting review</div>
+                    <ul class="mb-3">
+                        @foreach($vehicle->pending_application_changes as $field => $value)
+                            <li>
+                                <strong>{{ $pendingVehicleLabels[$field] ?? $field }}:</strong>
+                                @if(in_array($field, $pendingVehicleFiles, true))
+                                    <a href="{{ route('admin.application-changes.documents.show', ['type' => 'vehicle', 'id' => $vehicle->id, 'field' => $field]) }}" target="_blank" rel="noopener">View submitted document</a>
+                                @elseif($field === 'image_url' && is_array($value))
+                                    @foreach($value as $index => $path)
+                                        <a class="me-2" href="{{ route('admin.application-changes.documents.show', ['type' => 'vehicle', 'id' => $vehicle->id, 'field' => $field, 'index' => $index]) }}" target="_blank" rel="noopener">View image {{ $index + 1 }}</a>
+                                    @endforeach
+                                @else
+                                    {{ is_scalar($value) ? ($value === '' ? '—' : $value) : json_encode($value) }}
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                    <div class="d-flex flex-wrap gap-2">
+                        <form action="{{ route('admin.vehicles.application-changes.approve', $vehicle) }}" method="POST" onsubmit="return confirm('Approve these vehicle application changes?')">
+                            @csrf
+                            <button type="submit" class="btn btn-success">Approve changes</button>
+                        </form>
+                        <form action="{{ route('admin.vehicles.application-changes.reject', $vehicle) }}" method="POST" onsubmit="return confirm('Reject these vehicle application changes?')">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-danger">Reject changes</button>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
             <div class="vehicle-grid">
                 <div class="vehicle-summary">
                     <img src="{{ $vehicle->imagePaths() ? route('admin.documents.show', ['type' => 'vehicle', 'id' => $vehicle->id, 'field' => 'image_url', 'index' => 0]) : 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=60' }}" alt="Vehicle image" class="vehicle-main-image">

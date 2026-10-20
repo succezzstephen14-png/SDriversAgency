@@ -11,14 +11,22 @@
                     <h4 class="mb-0"><i class="fas fa-edit"></i> Edit Driver Profile</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('drivers.update') }}" method="POST">
+                    @if($driver->pending_application_changes)
+                        <div class="alert alert-info" role="status">
+                            Your driver application changes are waiting for admin review. Your approved details remain active until the changes are approved.
+                        </div>
+                    @endif
+                    <form action="{{ route('drivers.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
+                        <fieldset @disabled($driver->pending_application_changes) class="border-0 p-0 m-0">
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="license_number" class="form-label">License Number</label>
-                                <input type="text" class="form-control" id="license_number" name="license_number" value="{{ old('license_number', $driver->license_number) }}" required>
+                                <input type="text" class="form-control @error('license_number') is-invalid @enderror" id="license_number" name="license_number" value="{{ old('license_number', $driver->license_number) }}" placeholder="ADB-00000000-11111" pattern="ADB-[0-9]{8}-[0-9]{5}" maxlength="18" required>
+                                @error('license_number') <small class="text-danger">{{ $message }}</small> @enderror
+                                <small class="form-text text-muted">Format: ADB-00000000-11111</small>
                             </div>
 
                             <div class="col-md-6">
@@ -54,7 +62,7 @@
                                 <label for="profile_picture" class="form-label">Profile Picture (Upload)</label>
                                 <input type="file" class="form-control @error('profile_picture') is-invalid @enderror" 
                                        id="profile_picture" name="profile_picture" 
-                                       accept="image/*">
+                                       accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp">
                                 <small class="text-muted d-block mt-2">
                                     <i class="fas fa-info-circle"></i> Max 5MB. Supported image formats
                                 </small>
@@ -77,6 +85,7 @@
                             <a href="{{ route('drivers.profile') }}" class="btn btn-secondary">Back</a>
                             <button type="submit" class="btn btn-primary">Update Profile</button>
                         </div>
+                        </fieldset>
                     </form>
                 </div>
             </div>

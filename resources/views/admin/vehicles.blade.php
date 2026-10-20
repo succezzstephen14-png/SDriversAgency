@@ -331,6 +331,9 @@
                             <i class="fas fa-pause-circle"></i> Unavailable
                         @endif
                     </span>
+                    @if($vehicle->pending_application_changes)
+                        <span class="badge bg-warning text-dark">Changes awaiting review</span>
+                    @endif
                 </div>
                 
                 <div class="vehicle-card-body">
@@ -368,6 +371,11 @@
                 </div>
                 
                 <div class="vehicle-card-footer">
+                    @if($vehicle->pending_application_changes)
+                    <a href="{{ route('admin.vehicles.detail', $vehicle) }}" class="vehicle-action-btn warning">
+                        <i class="fas fa-clipboard-check"></i> Review changes
+                    </a>
+                    @endif
                     <button onclick="viewVehicleDetails({{ $vehicle->id }})" class="vehicle-action-btn primary">
                         <i class="fas fa-eye"></i> View
                     </button>

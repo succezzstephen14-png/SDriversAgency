@@ -198,9 +198,10 @@
 
     .password-toggle {
         position: absolute;
-        right: 1rem;
+        right: 0.35rem;
         top: 50%;
         transform: translateY(-50%);
+        z-index: 2;
         border: none;
         background: transparent;
         color: #64748b;
@@ -209,7 +210,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0.15rem;
+        width: 44px;
+        height: 44px;
+        padding: 0;
     }
 
     .password-toggle:hover {
@@ -218,7 +221,7 @@
 
     .form-group input {
         width: 100%;
-        padding: 1rem 1.25rem 1rem 3.5rem;
+        padding: 1rem 3.5rem 1rem 3.5rem;
         border: 1.5px solid #e2e8f0;
         border-radius: 18px;
         font-size: 0.95rem;
@@ -266,8 +269,8 @@
         transform: none;
     }
 
-    .spinner {
-        display: inline-block;
+    .btn-auth .spinner {
+        display: none;
         width: 18px;
         height: 18px;
         border: 2px solid rgba(255, 255, 255, 0.32);
@@ -276,6 +279,10 @@
         animation: spin 1s ease-in-out infinite;
         margin-right: 0.65rem;
         vertical-align: middle;
+    }
+
+    .btn-auth.loading .spinner {
+        display: inline-block;
     }
 
     .divider {
@@ -355,6 +362,11 @@
     }
 
     .auth-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
         text-align: center;
         color: #64748b;
         font-size: 0.95rem;
@@ -362,8 +374,16 @@
     }
 
     .auth-footer a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        background: #eff6ff;
         color: #2563eb;
         font-weight: 700;
+        text-decoration: none;
     }
 
     @keyframes spin {
@@ -381,8 +401,8 @@
             border-radius: 28px;
         }
 
-        .auth-panel {
-            padding: 2.25rem;
+        .auth-panel-content {
+            padding: 2rem;
         }
     }
 
@@ -390,6 +410,18 @@
         .auth-screen {
             padding: 1rem;
             gap: 1rem;
+        }
+
+        .auth-visual {
+            display: none;
+        }
+
+        .auth-panel-content {
+            padding: 1.5rem;
+        }
+
+        .social-buttons {
+            grid-template-columns: 1fr;
         }
 
         .auth-panel {
@@ -403,29 +435,33 @@
 </style>
 
 <script>
+    document.addEventListener('click', function(event) {
+        const button = event.target.closest('.password-toggle');
+        if (!button) return;
+
+        const targetInput = document.getElementById(button.getAttribute('data-target'));
+        if (!targetInput) return;
+
+        const showPassword = targetInput.type === 'password';
+        targetInput.type = showPassword ? 'text' : 'password';
+        button.setAttribute('aria-label', showPassword ? 'Hide password' : 'Show password');
+        button.setAttribute('aria-pressed', String(showPassword));
+        const icon = button.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fa-eye', !showPassword);
+            icon.classList.toggle('fa-eye-slash', showPassword);
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
-        const registerForm = document.querySelector('form');
+        const registerForm = document.getElementById('registerForm');
         const registerBtn = document.getElementById('register-btn');
-        const toggleButtons = document.querySelectorAll('.password-toggle');
-
-        toggleButtons.forEach((button) => {
-            button.addEventListener('click', () => {
-                const targetId = button.getAttribute('data-target');
-                const targetInput = document.getElementById(targetId);
-                if (!targetInput) return;
-
-                const isPassword = targetInput.type === 'password';
-                targetInput.type = isPassword ? 'text' : 'password';
-                button.innerHTML = isPassword ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
-                button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-            });
-        });
 
         if (registerForm && registerBtn) {
             registerForm.addEventListener('submit', function() {
                 registerBtn.classList.add('loading');
                 registerBtn.disabled = true;
-                registerBtn.innerHTML = '<span class="spinner"></span>Creating account...';
+                registerBtn.innerHTML = '<span class="spinner" aria-hidden="true"></span>Creating account...';
             });
         }
 
@@ -459,7 +495,7 @@
             <p class="subtitle">Sign up and start managing bookings, applications and driver profiles instantly.</p>
         </div>
 
-        <form method="POST" action="{{ route('register.post') }}">
+        <form id="registerForm" method="POST" action="{{ route('register.post') }}">
             @csrf
 
             @if($errors->any())
@@ -499,8 +535,8 @@
                 <div class="input-wrapper">
                     <i class="fas fa-lock"></i>
                     <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password" minlength="8" placeholder="Enter your password">
-                    <button type="button" class="password-toggle" data-target="password" aria-label="Show password">
-                        <i class="fas fa-eye"></i>
+                    <button type="button" class="password-toggle" data-target="password" aria-label="Show password" aria-pressed="false">
+                        <i class="fas fa-eye" aria-hidden="true"></i>
                     </button>
                 </div>
                 @error('password')
@@ -513,8 +549,8 @@
                 <div class="input-wrapper">
                     <i class="fas fa-lock"></i>
                     <input id="password_confirmation" type="password" class="form-control @error('password_confirmation') is-invalid @enderror" name="password_confirmation" required autocomplete="new-password" minlength="8" placeholder="Confirm your password">
-                    <button type="button" class="password-toggle" data-target="password_confirmation" aria-label="Show password">
-                        <i class="fas fa-eye"></i>
+                    <button type="button" class="password-toggle" data-target="password_confirmation" aria-label="Show password" aria-pressed="false">
+                        <i class="fas fa-eye" aria-hidden="true"></i>
                     </button>
                 </div>
                 @error('password_confirmation')
@@ -523,7 +559,7 @@
             </div>
 
             <button type="submit" class="btn-auth" id="register-btn">
-                <span class="spinner"></span>
+                <span class="spinner" aria-hidden="true"></span>
                 Create Account
             </button>
         </form>

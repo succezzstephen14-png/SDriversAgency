@@ -372,6 +372,9 @@
                                 <div class="user-details">
                                     <h4>{{ $user->name }}</h4>
                                     <p>{{ $user->email }}</p>
+                                    @if($user->pending_profile_changes)
+                                        <span class="status-badge pending"><i class="fas fa-user-clock"></i> Profile review needed</span>
+                                    @endif
                                 </div>
                             </div>
                         </td>

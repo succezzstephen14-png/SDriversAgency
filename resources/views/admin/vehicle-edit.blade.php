@@ -349,7 +349,8 @@
 
                 <div class="form-group">
                     <label for="license_plate">License Plate</label>
-                    <input type="text" id="license_plate" name="license_plate" value="{{ old('license_plate', $vehicle->license_plate) }}" required>
+                    <input type="text" id="license_plate" name="license_plate" value="{{ old('license_plate', $vehicle->license_plate) }}" placeholder="e.g., 2301-GR1 or AS 2567-12" maxlength="20" required>
+                    <small>Use a Ghana plate format such as 2301-GR1 or AS 2567-12.</small>
                 </div>
 
                 <div class="form-group">

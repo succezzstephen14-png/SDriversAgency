@@ -59,8 +59,24 @@ class AuthController extends Controller
             ])->onlyInput('email');
         }
 
+        if (
+            $loginType === 'user'
+            && (
+                (method_exists(Auth::user(), 'isAdmin') && Auth::user()->isAdmin())
+                || (method_exists(Auth::user(), 'isCmsAdmin') && Auth::user()->isCmsAdmin())
+            )
+        ) {
+            $adminLoginRoute = Auth::user()->isAdmin() ? 'admin.login' : 'cms.login';
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route($adminLoginRoute)
+                ->with('info', 'Please sign in through the separate administrator portal.');
+        }
+
         $request->session()->regenerate();
-        $this->updateOnboardingStatus(Auth::user());
+        Auth::user()->syncOnboardingStatus();
 
         if ($loginType === 'admin') {
             if (!(method_exists(Auth::user(), 'isAdmin') && Auth::user()->isAdmin())) {
@@ -138,7 +154,7 @@ class AuthController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $this->updateOnboardingStatus($user);
+        $user->syncOnboardingStatus();
 
         // Redirect to admin dashboard only for admin/super_admin roles
         if (method_exists($user, 'hasRole') && $user->hasRole(['super_admin', 'admin'])) {
@@ -187,18 +203,49 @@ class AuthController extends Controller
 
     public function profileUpdate(Request $request)
     {
+        $user = Auth::user();
+        if ($user->pending_profile_changes) {
+            return redirect()->route('profile.edit')
+                ->withErrors(['profile' => 'Your profile changes are awaiting admin review. You can submit another update after they are reviewed.']);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $user = Auth::user();
-        $user->update($validated);
-        $this->updateOnboardingStatus($user);
+        $changes = array_filter(
+            $validated,
+            fn ($value, $field) => $value !== $user->{$field},
+            ARRAY_FILTER_USE_BOTH
+        );
+
+        if ($changes === []) {
+            return redirect()->route('profile.edit')
+                ->with('success', 'No profile changes were submitted.');
+        }
+
+        $user->pending_profile_changes = $changes;
+        $user->save();
 
         return redirect()->route('profile')
-            ->with('success', 'Profile updated successfully!');
+            ->with('success', 'Your profile changes have been submitted for admin review. Your current approved details remain active until approval.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user = Auth::user();
+        $user->password = $validated['password'];
+        $user->save();
+
+        return redirect()->route('profile')
+            ->with('success', 'Password updated successfully.');
     }
 
     public function markNotificationRead(Request $request, \App\Models\Notification $notification)
@@ -217,36 +264,9 @@ class AuthController extends Controller
     public function onboarding()
     {
         $user = Auth::user();
-        $this->updateOnboardingStatus($user);
+        $user->syncOnboardingStatus();
 
         return redirect()->route('dashboard');
-    }
-
-    private function isOnboardingComplete(User $user): bool
-    {
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        return !empty($user->phone)
-            && !empty($user->address)
-            && $user->driver && $user->driver->status === 'available'
-            && $user->vehicles()->count() > 0
-            && $user->recruitments()->count() > 0;
-    }
-
-    private function updateOnboardingStatus(User $user): void
-    {
-        $completed = $this->isOnboardingComplete($user);
-        $attributes = ['onboarding_completed' => $completed];
-
-        if ($completed && empty($user->onboarded_at)) {
-            $attributes['onboarded_at'] = now();
-        }
-
-        if ($user->onboarding_completed !== $completed || (!empty($attributes['onboarded_at']) && empty($user->onboarded_at))) {
-            $user->update($attributes);
-        }
     }
 
     // Password Reset Methods
@@ -363,7 +383,7 @@ class AuthController extends Controller
             Auth::login($user);
             request()->session()->regenerate();
 
-            $this->updateOnboardingStatus($user);
+            $user->syncOnboardingStatus();
 
             // Redirect based on role
             if (method_exists($user, 'isCmsAdmin') && $user->isCmsAdmin()) {
@@ -411,7 +431,7 @@ class AuthController extends Controller
                 Auth::login($user);
             }
 
-            $this->updateOnboardingStatus($user);
+            $user->syncOnboardingStatus();
 
             if (method_exists($user, 'isCmsAdmin') && $user->isCmsAdmin()) {
                 return redirect()->intended(route('cms.dashboard'));

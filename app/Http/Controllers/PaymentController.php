@@ -29,38 +29,40 @@ class PaymentController extends Controller
             'dob' => 'nullable|date|before:today',
             'emergency_person' => 'required|string|max:255',
             'emergency_phone' => 'required|string|max:20',
-            'bio' => 'nullable|string|max:1000',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'bio' => 'required|string|max:1000',
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
 
             'license_number' => [
                 'required',
                 'string',
-                'max:50',
+                'regex:/^ADB-\d{8}-\d{5}$/',
                 Rule::unique('drivers', 'license_number'),
                 function ($attribute, $value, $fail) {
                     if (Vehicle::where('license_plate', $value)->exists()) {
                         $fail('The driver license number cannot match an existing vehicle license plate.');
                     }
-                    if (!preg_match('/^[A-Z0-9\/\-]{5,50}$/i', $value)) {
-                        $fail('The license number format appears invalid.');
-                    }
                 },
             ],
             'license_expiry' => 'required|date|after:today',
             'license_class' => 'required|in:A,B,C,D,E',
-            'license_file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'license_file' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
 
             'experience_years' => 'required|integer|min:0|max:60',
 
-            'ghana_card_no' => 'required|string|max:50',
-            'ghana_card_file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'passport_file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'ghana_card_no' => 'required|string|regex:/^GHA-\d{9}-\d$/',
+            'ghana_card_file' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'passport_file' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
 
             'guarantor' => 'required|string|max:255',
             'guarantor_phone' => 'required|string|max:20',
             'g_ghana_card_no' => 'required|string|regex:/^GHA-\d{9}-\d$/',
-            'guarantor_ghana_card_file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'guarantor_ghana_card_file' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
             'relationship' => 'required|in:family,employer,friend,colleague',
+            'second_guarantor' => 'required|string|max:255',
+            'second_guarantor_phone' => 'required|string|max:20',
+            'second_g_ghana_card_no' => 'required|string|regex:/^GHA-\d{9}-\d$/',
+            'second_guarantor_ghana_card_file' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'second_relationship' => 'required|in:family,employer,friend,colleague',
         ]);
 
         // Check for existing pending payments with the same license number
@@ -76,14 +78,21 @@ class PaymentController extends Controller
         }
 
         // Handle file uploads
-        $fileFields = ['profile_picture', 'license_file', 'ghana_card_file', 'passport_file', 'guarantor_ghana_card_file'];
+        $fileFields = [
+            'profile_picture',
+            'license_file',
+            'ghana_card_file',
+            'passport_file',
+            'guarantor_ghana_card_file',
+            'second_guarantor_ghana_card_file',
+        ];
         foreach ($fileFields as $field) {
             if ($request->hasFile($field)) {
                 $validated[$field] = $request->file($field)->store('documents', 'public');
             }
         }
 
-        $amount = 5000; // Paystack expects this EXACT value
+        $amount = 20; // GHS 0.20 in pesewas
         $reference = 'DRV-' . strtoupper(Str::random(12));
 
         $payment = Payment::create([
@@ -141,13 +150,13 @@ class PaymentController extends Controller
                     if (Driver::where('license_number', $value)->exists()) {
                         $fail('The vehicle license plate cannot match an existing driver license number.');
                     }
-                    if (!preg_match('/^[A-Z]{2}\s\d{4}-\d{2}$/i', $value)) {
-                        $fail('The license plate must follow the Ghana plate format, e.g., "GR 1234-25".');
+                    if (!preg_match('/^(?:\d{4}-[A-Z]{2}\d|[A-Z]{2}\s\d{4}-\d{2})$/i', $value)) {
+                        $fail('Use a valid Ghana plate format, e.g., "2301-GR1" or "AS 2567-12".');
                     }
                 },
             ],
             'registration_number' => 'nullable|string|max:100',
-            'vin' => 'nullable|string|unique:vehicles|max:17',
+            'vin' => ['nullable', 'string', 'size:17', 'regex:/^[A-HJ-NPR-Z0-9]{17}$/', Rule::unique('vehicles', 'vin')],
 
             'fuel_type' => 'nullable|in:petrol,diesel,hybrid,electric,gas',
             'transmission' => 'nullable|in:manual,automatic',
@@ -157,15 +166,16 @@ class PaymentController extends Controller
             'mileage' => 'nullable|integer|min:0',
 
             'condition' => 'required|in:excellent,very_good,good,fair,needs_maintenance',
-            'registration_expiry' => 'nullable|date',
-            'insurance_expiry' => 'nullable|date',
-            'inspection_expiry' => 'nullable|date',
-            'registration_document' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'insurance_document' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'roadworthiness_certificate' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'registration_date' => 'required|date',
+            'registration_expiry' => 'required|date',
+            'insurance_expiry' => 'required|date',
+            'inspection_expiry' => 'required|date',
+            'registration_document' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'insurance_document' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'roadworthiness_certificate' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
 
-            'image_url' => 'nullable|array',
-            'image_url.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image_url' => 'required|array|min:1',
+            'image_url.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'description' => 'nullable|string',
         ]);
 
@@ -199,7 +209,7 @@ class PaymentController extends Controller
             $validated['image_url'] = $imagePaths;
         }
 
-        $amount = 3000; // GHS 30.00 in pesewas
+        $amount = 20; // GHS 0.20 in pesewas
         $reference = 'VEH-' . strtoupper(Str::random(12));
 
         \Log::info('Creating vehicle payment', [
@@ -526,7 +536,14 @@ class PaymentController extends Controller
                 // Sanitize payment data - convert arrays to strings or null
                 $sanitizedData = $this->sanitizePaymentData($payment->data);
 
-                $requiredFields = ['license_number', 'license_expiry', 'license_class', 'experience_years', 'emergency_person', 'emergency_phone'];
+                $requiredFields = [
+                    'license_number', 'license_expiry', 'license_class', 'experience_years',
+                    'emergency_person', 'emergency_phone', 'bio', 'profile_picture',
+                    'guarantor', 'guarantor_phone', 'g_ghana_card_no',
+                    'guarantor_ghana_card_file', 'relationship',
+                    'second_guarantor', 'second_guarantor_phone', 'second_g_ghana_card_no',
+                    'second_guarantor_ghana_card_file', 'second_relationship',
+                ];
                 $missingFields = array_filter($requiredFields, function ($field) use ($sanitizedData) {
                     if (!array_key_exists($field, $sanitizedData)) {
                         return true;

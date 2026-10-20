@@ -133,11 +133,51 @@
         <div style="padding: .85rem 2rem; background:#f8fafc; border-bottom:1px solid #e6eefc; display:flex;gap:1rem;flex-wrap:wrap;align-items:center">
             <div class="small" style="color:#374151;font-weight:700">Driver ID: {{ $driver->id }}</div>
             <div class="small" style="color:#374151">User ID: {{ $driver->user_id }}</div>
-            <div class="small" style="color:#374151">Relationship: {{ $driver->relationship ?? '—' }}</div>
+            <div class="small" style="color:#374151">Guarantor 1 relationship: {{ $driver->relationship ?? '—' }}</div>
+            <div class="small" style="color:#374151">Guarantor 2 relationship: {{ $driver->second_relationship ?? '—' }}</div>
             <div class="small" style="color:#374151">Onboarded: {{ $driver->user->onboarding_completed ? 'Yes' : 'No' }} @if($driver->user->onboarded_at) · {{ Carbon::parse($driver->user->onboarded_at)->toDateTimeString() }} @endif</div>
             <div class="small" style="color:#374151">Profile image: @if($driver->profile_image) <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'profile_image']) }}" target="_blank">{{ Str::afterLast($driver->profile_image,'/') }}</a> @else — @endif</div>
             <div class="small" style="color:#374151">Profile picture: @if($driver->profile_picture) <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'profile_picture']) }}" target="_blank">{{ Str::afterLast($driver->profile_picture,'/') }}</a> @else — @endif</div>
         </div>
+
+        @if($driver->pending_application_changes)
+            @php
+                $pendingDriverLabels = [
+                    'license_number' => 'License number',
+                    'license_expiry' => 'License expiry',
+                    'license_class' => 'License class',
+                    'experience_years' => 'Experience (years)',
+                    'status' => 'Availability',
+                    'bio' => 'Bio',
+                    'profile_picture' => 'Profile picture',
+                ];
+            @endphp
+            <div class="detail-box m-3 border border-warning">
+                <div class="detail-label">Driver application changes awaiting review</div>
+                <ul class="mb-3">
+                    @foreach($driver->pending_application_changes as $field => $value)
+                        <li>
+                            <strong>{{ $pendingDriverLabels[$field] ?? $field }}:</strong>
+                            @if($field === 'profile_picture')
+                                <a href="{{ route('admin.application-changes.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => $field]) }}" target="_blank" rel="noopener">View submitted photo</a>
+                            @else
+                                {{ is_scalar($value) ? ($value === '' ? '—' : $value) : json_encode($value) }}
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+                <div class="d-flex flex-wrap gap-2">
+                    <form action="{{ route('admin.drivers.application-changes.approve', $driver) }}" method="POST" onsubmit="return confirm('Approve these driver application changes?')">
+                        @csrf
+                        <button type="submit" class="btn btn-success">Approve changes</button>
+                    </form>
+                    <form action="{{ route('admin.drivers.application-changes.reject', $driver) }}" method="POST" onsubmit="return confirm('Reject these driver application changes?')">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-danger">Reject changes</button>
+                    </form>
+                </div>
+            </div>
+        @endif
 
         <div class="review-body">
             <div>
@@ -185,8 +225,12 @@
                         <div class="detail-value">{{ $driver->experience_years ?? '—' }} years</div>
                     </div>
                     <div class="detail-box">
-                        <div class="detail-label">Guarantor</div>
+                        <div class="detail-label">Guarantor 1</div>
                         <div class="detail-value">{{ $driver->guarantor ?? '—' }} — {{ $driver->guarantor_phone ?? '—' }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Guarantor 2</div>
+                        <div class="detail-value">{{ $driver->second_guarantor ?? '—' }} — {{ $driver->second_guarantor_phone ?? '—' }}</div>
                     </div>
                 </div>
 
@@ -242,7 +286,7 @@
             <aside>
                 <div class="detail-box" style="text-align:center;">
                     @if($driver->getProfilePictureUrl())
-                        <img src="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'profile_picture']) }}" alt="photo" style="width:200px;height:200px;object-fit:cover;border-radius:12px;border:1px solid #e6eefc">
+                        <img src="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => $driver->profile_picture ? 'profile_picture' : 'profile_image']) }}" alt="{{ $driver->user->name }} profile picture" style="width:200px;height:200px;object-fit:cover;border-radius:12px;border:1px solid #e6eefc">
                     @elseif($driver->profile_image)
                         <img src="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'profile_image']) }}" alt="photo" style="width:200px;height:200px;object-fit:cover;border-radius:12px;border:1px solid #e6eefc">
                     @else
@@ -259,7 +303,15 @@
                             'License' => $driver->license_file,
                             'Ghana Card' => $driver->ghana_card_file,
                             'Passport' => $driver->passport_file,
-                            'Guarantor ID' => $driver->guarantor_ghana_card_file,
+                            'Guarantor 1 ID' => $driver->guarantor_ghana_card_file,
+                            'Guarantor 2 ID' => $driver->second_guarantor_ghana_card_file,
+                        ];
+                        $driverDocumentFields = [
+                            'License' => 'license_file',
+                            'Ghana Card' => 'ghana_card_file',
+                            'Passport' => 'passport_file',
+                            'Guarantor 1 ID' => 'guarantor_ghana_card_file',
+                            'Guarantor 2 ID' => 'second_guarantor_ghana_card_file',
                         ];
                     @endphp
                     <ul class="documents-list">
@@ -267,17 +319,41 @@
                             @if($path)
                                 <li>
                                     <span>{{ $label }}</span>
-                                    <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => match ($label) { 'License' => 'license_file', 'Ghana Card' => 'ghana_card_file', 'Passport' => 'passport_file', default => 'guarantor_ghana_card_file' }]) }}" target="_blank">View</a>
+                                    <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => $driverDocumentFields[$label]]) }}" target="_blank">View</a>
                                 </li>
                             @endif
                         @endforeach
                         @if($driver->getProfilePictureUrl())
                             <li>
                                 <span>Photo</span>
-                                <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'profile_picture']) }}" target="_blank">View</a>
+                                <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => $driver->profile_picture ? 'profile_picture' : 'profile_image']) }}" target="_blank">View</a>
                             </li>
                         @endif
                     </ul>
+                </div>
+
+                <div class="detail-box" style="margin-top:1rem;">
+                    <div class="detail-label">Driver vetting checklist</div>
+                    <p class="small text-muted">Mark each item complete after reviewing the evidence or recording the screening result. Saving this checklist does not approve or reject the driver.</p>
+                    <form action="{{ route('admin.drivers.vetting-checks.update', $driver) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="d-grid gap-2">
+                            @foreach(\App\Models\Driver::VETTING_CHECKS as $key => $label)
+                                <label class="form-check d-flex gap-2 align-items-start">
+                                    <input
+                                        class="form-check-input mt-1"
+                                        type="checkbox"
+                                        name="checks[{{ $key }}]"
+                                        value="1"
+                                        @checked(old("checks.$key", $driver->vetting_checks[$key] ?? false))
+                                    >
+                                    <span class="small">{{ $label }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Save vetting checklist</button>
+                    </form>
                 </div>
 
                 <div class="detail-box" style="margin-top:1rem;">

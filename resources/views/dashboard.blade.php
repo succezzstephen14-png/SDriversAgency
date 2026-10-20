@@ -262,6 +262,10 @@
             grid-template-columns: 1fr;
         }
 
+        .hero-intro {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
         .stat-value {
             font-size: 2rem;
         }
@@ -270,9 +274,23 @@
             grid-template-columns: repeat(2, 1fr);
         }
     }
+
+    @media (max-width: 480px) {
+        .hero-welcome {
+            padding: 1rem;
+        }
+
+        .featured-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .action-buttons {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
 </style>
 
-<div class="dashboard-panel">
+<div class="user-dashboard-content">
     <!-- Welcome Hero Section -->
     <div class="hero-welcome dashboard-card mb-4">
         <div class="hero-intro">

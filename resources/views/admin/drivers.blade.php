@@ -277,6 +277,25 @@
         border-radius: 16px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     }
+
+    .driver-profile-photo {
+        width: 88px;
+        height: 88px;
+        margin-bottom: .75rem;
+        border: 3px solid #e5e7eb;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .driver-profile-photo-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef2ff;
+        color: #4f46e5;
+        font-size: 2rem;
+        font-weight: 700;
+    }
 </style>
 @endsection
 
@@ -344,6 +363,17 @@
             <div class="driver-card">
                 <div class="driver-card-header">
                     <div class="driver-name-section">
+                        @if($driver->getProfilePictureUrl())
+                            <img
+                                src="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => $driver->profile_picture ? 'profile_picture' : 'profile_image']) }}"
+                                alt="{{ $driver->user?->name ?? 'Driver' }} profile picture"
+                                class="driver-profile-photo"
+                            >
+                        @else
+                            <div class="driver-profile-photo driver-profile-photo-placeholder" role="img" aria-label="No profile picture uploaded">
+                                {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($driver->user?->name ?? 'D', 0, 1)) }}
+                            </div>
+                        @endif
                         <div class="driver-name">{{ $driver->user?->name ?? 'Unknown Driver' }}</div>
                         <div class="driver-email">{{ $driver->user?->email ?? 'No email' }}</div>
                     </div>
@@ -356,6 +386,9 @@
                             <i class="fas fa-times-circle"></i> Rejected
                         @endif
                     </span>
+                    @if($driver->pending_application_changes)
+                        <span class="badge bg-warning text-dark">Changes awaiting review</span>
+                    @endif
                 </div>
                 
                 <div class="driver-card-body">
@@ -416,6 +449,11 @@
                 </div>
                 
                 <div class="driver-card-footer">
+                    @if($driver->pending_application_changes)
+                        <a href="{{ route('admin.drivers.detail', $driver) }}" class="driver-action-btn warning">
+                            <i class="fas fa-clipboard-check"></i> Review changes
+                        </a>
+                    @endif
                     <button onclick="viewDriverDetails('{{ $driver->id }}')" class="driver-action-btn primary">
                         <i class="fas fa-eye"></i> View
                     </button>

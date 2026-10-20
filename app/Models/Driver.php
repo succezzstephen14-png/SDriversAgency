@@ -5,10 +5,27 @@ namespace App\Models;
 use App\Models\Concerns\HasAlphanumericId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Driver extends Model
 {
     use HasFactory, HasAlphanumericId;
+
+    public const VETTING_CHECKS = [
+        'application_form' => 'Completed driver application form',
+        'ghana_card_verified' => 'Copy of Ghana Card and identity verification',
+        'license_verified' => "Valid driver's licence and licence verification",
+        'passport_photo' => 'Recent passport-size photograph',
+        'contact_details' => 'Current residential address and contact details',
+        'references' => 'Two referees and completed reference checks',
+        'employment' => 'Previous employment details and verification',
+        'police_check' => 'Police criminal background check, with consent',
+        'emergency_contact' => 'Emergency contact details',
+        'code_of_conduct' => 'Signed driver code of conduct',
+        'confidentiality' => 'Signed confidentiality and client-protection undertaking',
+        'driving_assessment' => 'Practical driving assessment report',
+        'screening_consent' => 'Signed consent and privacy notice for screening',
+    ];
 
     public $incrementing = false;
 
@@ -35,12 +52,19 @@ class Driver extends Model
         'g_ghana_card_no',
         'guarantor_ghana_card_file',
         'relationship',
+        'second_guarantor',
+        'second_guarantor_phone',
+        'second_g_ghana_card_no',
+        'second_guarantor_ghana_card_file',
+        'second_relationship',
         'emergency_person',
         'emergency_phone',
         'status',
         'approval_status',
         'approved_at',
         'rejection_reason',
+        'vetting_checks',
+        'pending_application_changes',
         'bio',
         'profile_picture',
         'rating',
@@ -59,6 +83,8 @@ class Driver extends Model
     protected $casts = [
         'license_expiry' => 'date',
         'approved_at' => 'datetime',
+        'vetting_checks' => 'array',
+        'pending_application_changes' => 'array',
         'rating' => 'float',
         'total_trips' => 'integer',
         'latitude' => 'decimal:8',
@@ -78,12 +104,14 @@ class Driver extends Model
     /**
      * Get profile picture URL with fallback.
      */
-    public function getProfilePictureUrl()
+    public function getProfilePictureUrl(): ?string
     {
-        if ($this->profile_picture && file_exists(storage_path('app/public/' . $this->profile_picture))) {
-            return asset('storage/' . $this->profile_picture);
+        $path = $this->profile_picture ?: $this->profile_image;
+
+        if ($path && Storage::disk('public')->exists($path)) {
+            return Storage::disk('public')->url($path);
         }
-        // Fallback to initials avatar
+
         return null;
     }
 
@@ -92,7 +120,7 @@ class Driver extends Model
      */
     public function hasProfilePicture(): bool
     {
-        return !is_null($this->profile_picture) && file_exists(storage_path('app/public/' . $this->profile_picture));
+        return $this->getProfilePictureUrl() !== null;
     }
 
     /**

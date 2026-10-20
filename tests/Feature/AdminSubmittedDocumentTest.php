@@ -93,4 +93,58 @@ class AdminSubmittedDocumentTest extends TestCase
             ]))
             ->assertForbidden();
     }
+
+    public function test_driver_profile_picture_is_visible_in_the_driver_and_admin_portals(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('documents/driver-photo.jpg', 'profile photo');
+
+        $driverUser = User::factory()->create(['role' => 'user']);
+        $driver = Driver::factory()->create([
+            'user_id' => $driverUser->id,
+            'profile_picture' => 'documents/driver-photo.jpg',
+        ]);
+        $photoUrl = Storage::disk('public')->url('documents/driver-photo.jpg');
+
+        $this->assertSame($photoUrl, $driver->getProfilePictureUrl());
+
+        $this->actingAs($driverUser)
+            ->get(route('drivers.profile'))
+            ->assertOk()
+            ->assertSee($photoUrl, false)
+            ->assertSee('profile picture');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $photoRoute = route('admin.documents.show', [
+            'type' => 'driver',
+            'id' => $driver->id,
+            'field' => 'profile_picture',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.drivers'))
+            ->assertOk()
+            ->assertSee($photoRoute, false);
+
+        $this->actingAs($admin)
+            ->get(route('admin.drivers.detail', $driver))
+            ->assertOk()
+            ->assertSee($photoRoute, false)
+            ->assertSee('profile picture');
+    }
+
+    public function test_profile_picture_url_falls_back_to_legacy_profile_image(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('documents/legacy-driver-photo.jpg', 'profile photo');
+
+        $driver = Driver::factory()->create([
+            'profile_image' => 'documents/legacy-driver-photo.jpg',
+        ]);
+
+        $this->assertSame(
+            Storage::disk('public')->url('documents/legacy-driver-photo.jpg'),
+            $driver->getProfilePictureUrl()
+        );
+    }
 }

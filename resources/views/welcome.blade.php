@@ -383,9 +383,7 @@
 
 /* Contact Section Styles */
 .contact-section {
-    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
     color: white;
-    padding: 5rem 0;
 }
 
 .contact-form-card {
@@ -459,6 +457,15 @@
     color: #d1d5db;
     margin-bottom: 0.25rem;
     line-height: 1.5;
+}
+
+.contact-content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.contact-content a {
+    overflow-wrap: anywhere;
 }
 
 /* Why Choose Us Section Styles */
@@ -667,18 +674,31 @@
         text-align: center;
     }
 
-    .contact-section .row > div {
-        margin-bottom: 2rem;
+    .contact-section .row {
+        --bs-gutter-x: 1.5rem !important;
     }
 
-    .contact-item {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.75rem;
+    .contact-section .contact-item {
+        flex-direction: row;
+        align-items: flex-start;
+        text-align: left;
+        gap: 0.875rem;
     }
 
-    .contact-icon {
-        align-self: center;
+    .contact-section .contact-icon {
+        width: 44px;
+        height: 44px;
+        align-self: flex-start;
+        font-size: 1rem;
+    }
+
+    .contact-section .contact-content {
+        flex: 1;
+    }
+
+    .contact-section .contact-info,
+    .contact-section .contact-form-card {
+        min-width: 0;
     }
 
     .benefits-grid {
@@ -719,9 +739,30 @@
 
 @media (max-width: 480px) {
     .services-section,
-    .about-section,
-    .contact-section {
+    .about-section {
         padding: 3rem 0;
+    }
+
+    .slide-content {
+        width: 100%;
+        padding: 1.25rem;
+    }
+
+    .policy-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.25rem;
+    }
+
+    .policy-card {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .section-inner > .row {
+        --bs-gutter-x: 1rem;
+    }
+
+    .contact-section .row {
+        --bs-gutter-x: 1rem !important;
     }
 
     .service-card {
@@ -729,7 +770,24 @@
     }
 
     .contact-form-card {
-        padding: 2rem;
+        padding: 1.25rem;
+    }
+
+    .contact-section .section-title {
+        font-size: 2rem;
+    }
+
+    .contact-section .section-subtitle {
+        font-size: 1rem;
+    }
+
+    .contact-section .contact-content h5 {
+        font-size: 1rem;
+    }
+
+    .contact-section .contact-content p,
+    .contact-section .contact-content a {
+        overflow-wrap: anywhere;
     }
 }
 
@@ -1466,7 +1524,7 @@ html {
 </section>
 
 <!-- Contact Section -->
-<section id="contact" class="section-primary">
+<section id="contact" class="section-primary contact-section">
     <div class="section-inner">
         <div style="text-align: center; margin-bottom: 3rem;">
             <h2 class="section-title">Contact Us</h2>

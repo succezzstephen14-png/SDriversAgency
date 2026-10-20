@@ -165,7 +165,7 @@
                             </div>
                             <div class="text-end">
                                 @if($driver->getProfilePictureUrl())
-                                    <img src="{{ $driver->getProfilePictureUrl() }}" alt="photo" style="height:56px;width:56px;border-radius:8px;object-fit:cover;border:2px solid rgba(255,255,255,.12)">
+                                    <img src="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => $driver->profile_picture ? 'profile_picture' : 'profile_image']) }}" alt="{{ $driver->user->name }} profile picture" style="height:72px;width:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.8)">
                                 @elseif($driver->profile_image)
                                     <img src="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'profile_image']) }}" alt="photo" style="height:56px;width:56px;border-radius:8px;object-fit:cover;border:2px solid rgba(255,255,255,.12)">
                                 @else
@@ -238,7 +238,7 @@
                                         <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'guarantor_ghana_card_file']) }}" target="_blank">🪪 Guarantor ID</a>
                                     @endif
                                     @if($driver->getProfilePictureUrl())
-                                        <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'profile_picture']) }}" target="_blank">🖼️ Photo</a>
+                                        <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => $driver->profile_picture ? 'profile_picture' : 'profile_image']) }}" target="_blank">🖼️ Photo</a>
                                     @endif
                                 </div>
                             </div>

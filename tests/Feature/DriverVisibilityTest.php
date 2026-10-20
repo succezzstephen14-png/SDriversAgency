@@ -102,4 +102,53 @@ class DriverVisibilityTest extends TestCase
             ->assertOk()
             ->assertSee($driver->user->name);
     }
+
+    public function test_admin_can_save_driver_vetting_checks_without_blocking_approval(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $driver = Driver::factory()->create(['approval_status' => 'pending']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.drivers.detail', $driver))
+            ->assertOk()
+            ->assertSee('Driver vetting checklist')
+            ->assertSee('Two referees and completed reference checks')
+            ->assertSee('Signed consent and privacy notice for screening');
+
+        $this->actingAs($admin)
+            ->put(route('admin.drivers.vetting-checks.update', $driver), [
+                'checks' => [
+                    'application_form' => '1',
+                    'ghana_card_verified' => '1',
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame([
+            'application_form' => true,
+            'ghana_card_verified' => true,
+            'license_verified' => false,
+            'passport_photo' => false,
+            'contact_details' => false,
+            'references' => false,
+            'employment' => false,
+            'police_check' => false,
+            'emergency_contact' => false,
+            'code_of_conduct' => false,
+            'confidentiality' => false,
+            'driving_assessment' => false,
+            'screening_consent' => false,
+        ], $driver->fresh()->vetting_checks);
+
+        $this->actingAs($admin)
+            ->post(route('admin.drivers.approve', $driver))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('drivers', [
+            'id' => $driver->id,
+            'approval_status' => 'approved',
+        ]);
+    }
 }

@@ -264,6 +264,10 @@
             cursor: pointer;
         }
 
+        .sidebar-backdrop {
+            display: none;
+        }
+
         .dashboard-panel {
             padding: 1.5rem 1.75rem 0;
             max-width: 1320px;
@@ -483,12 +487,26 @@
         @media (max-width: 991px) {
             .dashboard-sidebar {
                 transform: translateX(-100%);
-                max-width: 100%;
-                width: 100%;
+                width: min(320px, 88vw);
+                height: 100vh;
+                height: 100dvh;
             }
 
             .dashboard-sidebar.open {
                 transform: translateX(0);
+            }
+
+            .sidebar-backdrop.open {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 1100;
+                border: 0;
+                background: rgba(15, 23, 42, 0.5);
+            }
+
+            body.sidebar-open {
+                overflow: hidden;
             }
 
             .dashboard-main {
@@ -502,6 +520,21 @@
             .sidebar-close {
                 display: inline-flex;
             }
+
+            .dashboard-topbar .topbar-left {
+                flex: 1;
+                min-width: 0;
+                flex-wrap: nowrap;
+            }
+
+            .dashboard-topbar .topbar-left > div {
+                min-width: 0;
+            }
+
+            .dashboard-topbar p {
+                font-size: 0.8rem;
+                line-height: 1.35;
+            }
         }
 
         @media (max-width: 768px) {
@@ -511,6 +544,32 @@
 
             .dashboard-panel {
                 padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-topbar {
+                gap: 0.65rem;
+                padding: 0.75rem;
+            }
+
+            .dashboard-topbar .topbar-left {
+                gap: 0.65rem;
+            }
+
+            .dashboard-topbar h1 {
+                font-size: 1.05rem;
+            }
+
+            .dashboard-toggle {
+                width: 42px;
+                height: 42px;
+                flex: 0 0 42px;
+            }
+
+            .dashboard-card {
+                padding: 1rem;
+                border-radius: 18px;
             }
         }
     </style>
@@ -579,19 +638,16 @@
             </div>
         </aside>
 
+        <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Close dashboard navigation" onclick="setSidebarOpen(false)"></button>
+
         <div class="dashboard-main" id="dashboardMain">
             <div class="dashboard-topbar">
                 <div class="topbar-left">
-                    <button class="dashboard-toggle" type="button" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <button class="dashboard-toggle" id="dashboardToggle" type="button" aria-label="Open dashboard navigation" aria-controls="dashboardSidebar" aria-expanded="false" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
                     <div>
                         <h1>Dashboard</h1>
                         <p>Access your profile, bookings, applications and quick actions from one place.</p>
                     </div>
-                </div>
-                <div class="topbar-actions">
-                    <button class="dashboard-toggle btn btn-outline-secondary d-lg-none" type="button" onclick="toggleSidebar()">
-                        <i class="fas fa-sliders-h"></i>
-                    </button>
                 </div>
             </div>
             <main class="dashboard-panel">
@@ -603,15 +659,36 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
         const sidebar = document.getElementById('dashboardSidebar');
-        const main = document.getElementById('dashboardMain');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        const dashboardToggle = document.getElementById('dashboardToggle');
 
         function toggleSidebar() {
-            sidebar.classList.toggle('open');
+            setSidebarOpen(!sidebar.classList.contains('open'));
+        }
+
+        function setSidebarOpen(isOpen) {
+            sidebar.classList.toggle('open', isOpen);
+            sidebarBackdrop.classList.toggle('open', isOpen);
+            dashboardToggle.setAttribute('aria-expanded', String(isOpen));
+            dashboardToggle.setAttribute('aria-label', isOpen ? 'Close dashboard navigation' : 'Open dashboard navigation');
+            document.body.classList.toggle('sidebar-open', isOpen && window.innerWidth <= 991);
         }
 
         document.addEventListener('click', function (event) {
             if (!sidebar.contains(event.target) && !event.target.closest('.dashboard-toggle') && window.innerWidth <= 991) {
-                sidebar.classList.remove('open');
+                setSidebarOpen(false);
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && sidebar.classList.contains('open')) {
+                setSidebarOpen(false);
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 991) {
+                setSidebarOpen(false);
             }
         });
     </script>
