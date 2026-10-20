@@ -7,7 +7,7 @@ return [
         'password' => env('SYSTEM_ADMIN_PASSWORD'),
     ],
     'cms' => [
-        'email' => env('CMS_ADMIN_EMAIL', 'site.admin@dashboard.local'),
+        'email' => env('CMS_ADMIN_EMAIL', 'Succezzstephen14@gmail.com'),
         'password' => env('CMS_ADMIN_PASSWORD'),
     ],
 ];
