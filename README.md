@@ -113,6 +113,10 @@ php artisan serve
 
 The admin subdomain must be added to the Hostinger website and use the Laravel `public` directory as its document root. Add HTTPS for the subdomain after DNS is active. `ADMIN_DOMAIN` controls which host Laravel uses for admin and CMS routes.
 
+### Email verification
+
+New email/password accounts receive a signed verification link and must verify their address before accessing account pages. Google and Apple accounts are automatically verified only when the provider confirms the email address. Configure a working production mail transport and sender address so verification messages can be delivered; Laravel's default `MAIL_MAILER=log` only writes messages to the log. After changing mail settings, clear Laravel's cached configuration with `php artisan config:clear`.
+
 ## 🔌 API Endpoints
 
 ### Live Data (Auto-refresh every 30 seconds)

@@ -18,4 +18,15 @@ class RegistrationViewTest extends TestCase
             ->assertSee("event.target.closest('.password-toggle')", false)
             ->assertSee("targetInput.type = showPassword ? 'text' : 'password'", false);
     }
+
+    public function test_phone_example_uses_ghana_country_code(): void
+    {
+        $user = \App\Models\User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('profile.edit'))
+            ->assertOk()
+            ->assertSee('placeholder="+233..."', false)
+            ->assertDontSee('placeholder="+234..."', false);
+    }
 }

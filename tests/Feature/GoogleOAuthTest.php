@@ -41,6 +41,24 @@ class GoogleOAuthTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_google_verified_email_is_marked_verified_for_an_existing_user(): void
+    {
+        $user = User::factory()->unverified()->create(['email' => 'verified@example.com']);
+        $googleUser = new \Laravel\Socialite\Two\User();
+        $googleUser->email = 'verified@example.com';
+        $googleUser->user = ['email_verified' => true];
+
+        $provider = Mockery::mock(Provider::class);
+        $provider->shouldReceive('user')->once()->andReturn($googleUser);
+        Socialite::shouldReceive('driver')->with('google')->once()->andReturn($provider);
+
+        $this->get(route('auth.google.callback'))
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->fresh()->email_verified_at);
+    }
+
     public function test_google_callback_reports_failure_and_logs_the_diagnostic(): void
     {
         Log::shouldReceive('error')

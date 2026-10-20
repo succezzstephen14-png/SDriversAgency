@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -102,6 +105,10 @@ class AuthController extends Controller
             return redirect()->intended(route('admin.dashboard'));
         }
 
+        if (!Auth::user()->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 
@@ -136,10 +143,42 @@ class AuthController extends Controller
             'onboarding_completed' => false,
         ]);
 
+        event(new Registered($user));
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard');
+        return redirect()->route('verification.notice');
+    }
+
+    public function verificationNotice()
+    {
+        if (Auth::user()->hasVerifiedEmail()) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('auth.verify-email');
+    }
+
+    public function verifyEmail(EmailVerificationRequest $request)
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return redirect()->route('dashboard');
+        }
+
+        $request->fulfill();
+
+        return redirect()->route('dashboard')->with('status', 'email-verified');
+    }
+
+    public function resendVerificationEmail(Request $request)
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return redirect()->route('dashboard');
+        }
+
+        $request->user()->sendEmailVerificationNotification();
+
+        return back()->with('status', 'verification-link-sent');
     }
 
     public function logout(Request $request)
@@ -362,6 +401,10 @@ class AuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
             $email = $googleUser->getEmail();
+            $emailVerified = filter_var(
+                data_get($googleUser->user ?? [], 'email_verified'),
+                FILTER_VALIDATE_BOOLEAN
+            );
 
             if (!is_string($email) || trim($email) === '') {
                 throw new \UnexpectedValueException('Google did not return an email address.');
@@ -377,7 +420,13 @@ class AuthController extends Controller
                     'password' => Hash::make(Str::random(24)),
                     'role' => 'user',
                     'onboarding_completed' => false,
+                    'email_verified_at' => $emailVerified ? now() : null,
                 ]);
+                if (!$emailVerified) {
+                    event(new Registered($user));
+                }
+            } elseif ($emailVerified && !$user->hasVerifiedEmail()) {
+                $user->markEmailAsVerified();
             }
 
             Auth::login($user);
@@ -391,6 +440,9 @@ class AuthController extends Controller
             }
             if (method_exists($user, 'hasRole') && $user->hasRole(['super_admin','admin'])) {
                 return redirect()->intended(route('admin.dashboard'));
+            }
+            if (!$user->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
             }
             return redirect()->intended(route('dashboard'));
         } catch (\Throwable $e) {
@@ -415,10 +467,17 @@ class AuthController extends Controller
     {
         try {
             $appleUser = Socialite::driver('apple')->user();
+            $emailVerified = filter_var(
+                data_get($appleUser->user ?? [], 'email_verified'),
+                FILTER_VALIDATE_BOOLEAN
+            );
 
             $user = User::where('email', $appleUser->getEmail())->first();
 
             if ($user) {
+                if ($emailVerified && !$user->hasVerifiedEmail()) {
+                    $user->markEmailAsVerified();
+                }
                 Auth::login($user);
             } else {
                 $user = User::create([
@@ -427,8 +486,12 @@ class AuthController extends Controller
                     'password' => Hash::make(Str::random(24)),
                     'role' => 'user',
                     'onboarding_completed' => false,
+                    'email_verified_at' => $emailVerified ? now() : null,
                 ]);
                 Auth::login($user);
+                if (!$user->hasVerifiedEmail()) {
+                    $user->sendEmailVerificationNotification();
+                }
             }
 
             $user->syncOnboardingStatus();
@@ -438,6 +501,9 @@ class AuthController extends Controller
             }
             if (method_exists($user, 'hasRole') && $user->hasRole(['super_admin','admin'])) {
                 return redirect()->intended(route('admin.dashboard'));
+            }
+            if (!$user->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
             }
             return redirect()->intended(route('dashboard'));
         } catch (\Exception $e) {

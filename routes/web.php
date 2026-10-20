@@ -34,6 +34,15 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/register', [AuthController::class, 'registerForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/email/verify', [AuthController::class, 'verificationNotice'])
+    ->middleware('auth')
+    ->name('verification.notice');
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->middleware(['auth', 'signed', 'throttle:6,1'])
+    ->name('verification.verify');
+Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])
+    ->middleware(['auth', 'throttle:6,1'])
+    ->name('verification.send');
 
 // Password Reset Routes
 Route::get('/forgot-password', [AuthController::class, 'forgotPasswordForm'])->name('password.request');
@@ -47,12 +56,12 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 Route::get('/auth/apple', [AuthController::class, 'redirectToApple'])->name('auth.apple');
 Route::get('/auth/apple/callback', [AuthController::class, 'handleAppleCallback']);
 
-Route::get('/profile', [AuthController::class, 'profile'])->name('profile')->middleware('auth');
-Route::get('/profile/edit', [AuthController::class, 'profileEdit'])->name('profile.edit')->middleware('auth');
-Route::put('/profile', [AuthController::class, 'profileUpdate'])->name('profile.update')->middleware('auth');
-Route::put('/profile/password', [AuthController::class, 'updatePassword'])->name('profile.password.update')->middleware('auth');
-Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard')->middleware('auth');
-Route::get('/onboarding', [AuthController::class, 'onboarding'])->name('onboarding')->middleware('auth');
+Route::get('/profile', [AuthController::class, 'profile'])->name('profile')->middleware(['auth', 'verified']);
+Route::get('/profile/edit', [AuthController::class, 'profileEdit'])->name('profile.edit')->middleware(['auth', 'verified']);
+Route::put('/profile', [AuthController::class, 'profileUpdate'])->name('profile.update')->middleware(['auth', 'verified']);
+Route::put('/profile/password', [AuthController::class, 'updatePassword'])->name('profile.password.update')->middleware(['auth', 'verified']);
+Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard')->middleware(['auth', 'verified']);
+Route::get('/onboarding', [AuthController::class, 'onboarding'])->name('onboarding')->middleware(['auth', 'verified']);
 
 Route::middleware('dashboard.only')->group(function () {
     Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
@@ -99,7 +108,7 @@ Route::get('/payment/cancelled', [PaymentController::class, 'paymentCancelled'])
 Route::post('/payment/webhook', [PaymentController::class, 'handlePaystackCallback'])->name('payment.webhook');
 
 // Authenticated user routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     // User vehicles
     Route::get('/my-vehicles', [VehicleController::class, 'myVehicles'])->name('vehicles.my-vehicles');
     Route::get('/my-vehicles/pending', [VehicleController::class, 'myPendingVehicles'])->name('vehicles.pending-vehicles');
@@ -294,7 +303,7 @@ Route::domain(config('admin.domain'))->middleware('auth')->prefix('admin')->name
     Route::get('/location-data', [AdminController::class, 'locationData'])->name('location-data');
 });
 
-Route::middleware('auth')->post('/location/update', [App\Http\Controllers\LocationController::class, 'update'])->name('location.update');
+Route::middleware(['auth', 'verified'])->post('/location/update', [App\Http\Controllers\LocationController::class, 'update'])->name('location.update');
 
 // CMS - Content Management System for cms_admin
 use App\Http\Controllers\CmsController;
