@@ -740,7 +740,8 @@ class PaymentController extends Controller
                 "Authorization: Bearer " . $secretKey,
                 "Content-Type: application/json",
             ],
-            CURLOPT_SSL_VERIFYPEER => false, // For local development
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
         ]);
 
         $response = curl_exec($curl);

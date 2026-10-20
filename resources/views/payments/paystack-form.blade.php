@@ -2,6 +2,11 @@
 
 @section('title', $title ?? 'Paystack Payment')
 
+@php
+    $paystackPublicKey = config('services.paystack.public_key');
+    $paymentEmail = Auth::check() ? Auth::user()->email : ($payment->data['guest_email'] ?? 'guest@example.com');
+@endphp
+
 @section('content')
 <div class="container-max my-5">
     <div class="row justify-content-center">
@@ -45,6 +50,7 @@
 
                     <form id="paymentForm" method="POST">
                         @csrf
+                        @if($paystackPublicKey)
                         <button
                             type="button"
                             class="btn btn-primary btn-lg w-100"
@@ -53,16 +59,21 @@
                         >
                             <i class="fas fa-credit-card me-2"></i>Pay with Paystack
                         </button>
+                        @else
+                            <div class="alert alert-danger" role="alert">
+                                Online payment is temporarily unavailable. Please contact support.
+                            </div>
+                        @endif
 
                         <a href="{{ url()->previous() }}" class="btn btn-secondary btn-lg w-100 mt-2">
                             <i class="fas fa-arrow-left me-2"></i>Cancel
                         </a>
                     </form>
 
-                    <div class="alert alert-warning mt-4">
+                    <div class="alert alert-light mt-4">
                         <small>
                             <i class="fas fa-info-circle me-1"></i>
-                            <strong>Test Card:</strong> Use 4084 0840 8408 4081 with any future expiry date and any CVC for testing.
+                            Payments are securely processed by Paystack.
                         </small>
                     </div>
                 </div>
@@ -75,47 +86,51 @@
 @section('scripts')
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <script>
+const paystackConfig = {
+    key: @json($paystackPublicKey),
+    email: @json($paymentEmail),
+    amount: @json($amount),
+    reference: @json($payment->reference),
+    callbackUrl: @json(route('payment.success'))
+};
+
 function payWithPaystack() {
     const paystackBtn = document.getElementById('paystackBtn');
+    if (!paystackBtn || !paystackConfig.key || typeof PaystackPop === 'undefined') {
+        alert('Online payment is currently unavailable. Please contact support.');
+        return;
+    }
+
     const originalText = paystackBtn.innerHTML;
 
-    // Show loading state
     paystackBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
     paystackBtn.disabled = true;
 
-    const handler = PaystackPop.setup({
-        key: '{{ config("services.paystack.public_key") }}',
-        email: '{{ Auth::check() ? Auth::user()->email : ($payment->data["guest_email"] ?? "guest@example.com") }}',
-        amount: {{ $amount }},
-        ref: '{{ $payment->reference }}',
-        currency: 'GHS',
-        onClose: function() {
-            // Reset button
-            paystackBtn.innerHTML = originalText;
-            paystackBtn.disabled = false;
-            alert('Payment cancelled.');
-        },
-        callback: function(response) {
-            if(response.status === 'success') {
-                // Show success message
-                paystackBtn.innerHTML = '<i class="fas fa-check me-2"></i>Payment Successful!';
-                paystackBtn.className = 'btn btn-success btn-lg w-100';
+    try {
+        const handler = PaystackPop.setup({
+            key: paystackConfig.key,
+            email: paystackConfig.email,
+            amount: paystackConfig.amount,
+            ref: paystackConfig.reference,
+            currency: 'GHS',
+            onClose: function() {
+                paystackBtn.innerHTML = originalText;
+                paystackBtn.disabled = false;
+                alert('Payment cancelled.');
+            },
+            callback: function(response) {
+                if (response.status === 'success') {
+                    paystackBtn.innerHTML = '<i class="fas fa-check me-2"></i>Payment Successful!';
+                    paystackBtn.className = 'btn btn-success btn-lg w-100';
+                    window.location.href = paystackConfig.callbackUrl + '?reference=' + encodeURIComponent(response.reference);
+                    return;
+                }
 
-                // Redirect after short delay
-                setTimeout(function() {
-                    window.location.href = '{{ route("payment.success") }}?reference=' + response.reference;
-                }, 1000);
-            } else {
-                // Reset button
                 paystackBtn.innerHTML = originalText;
                 paystackBtn.disabled = false;
                 alert('Payment failed. Please try again.');
             }
-        }
-    });
-
-    // Handle setup errors
-    try {
+        });
         handler.openIframe();
     } catch (error) {
         console.error('Paystack setup error:', error);
@@ -127,10 +142,11 @@ function payWithPaystack() {
 
 // Check if Paystack is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof PaystackPop === 'undefined') {
+    const paystackBtn = document.getElementById('paystackBtn');
+    if (paystackBtn && typeof PaystackPop === 'undefined') {
         console.error('Paystack library not loaded');
-        document.getElementById('paystackBtn').innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Payment Unavailable';
-        document.getElementById('paystackBtn').disabled = true;
+        paystackBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Payment Unavailable';
+        paystackBtn.disabled = true;
     }
 });
 </script>

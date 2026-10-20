@@ -28,26 +28,24 @@ This document describes the Paystack payment integration for the driver registra
 
 ### 2. Configure Environment Variables
 
-Update your `.env` file:
+Configure the matching Paystack public and secret keys in the server environment. For production,
+use the live keys in Hostinger's environment settings or the production `.env` file outside the
+public web root. Never commit real keys to GitHub. After changing them, clear Laravel's cached
+configuration with `php artisan config:clear`.
 
 ```env
-PAYSTACK_PUBLIC_KEY=pk_live_your_public_key_here
-PAYSTACK_SECRET_KEY=sk_live_your_secret_key_here
+PAYSTACK_PUBLIC_KEY=
+PAYSTACK_SECRET_KEY=
 ```
 
-### 3. Testing with Paystack Test Keys
+The public key is used by the checkout page; the secret key is used by the server to verify each
+transaction. Both must belong to the same Paystack mode (test or live). Do not mix a live public
+key with a test secret key, or vice versa.
 
-For development/testing, use test keys:
+### 3. Development/testing
 
-```env
-PAYSTACK_PUBLIC_KEY=pk_test_your_test_public_key
-PAYSTACK_SECRET_KEY=sk_test_your_test_secret_key
-```
-
-**Test Card Details:**
-- Card Number: `4111 1111 1111 1111`
-- Expiry: Any future date
-- CVC: Any 3 digits
+For development, use Paystack test keys and test payment methods from Paystack's documentation.
+Use live keys only for real customer transactions.
 
 ### 4. Database Migration
 
