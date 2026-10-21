@@ -106,12 +106,12 @@ php artisan serve
 6. Public website pages redirect signed-in regular users to their dashboard. Log out to browse public listings.
 
 ### For Admin Users
-1. **Login** at `https://admin.succezzdriversagency.com/login`
-2. **Access** the admin dashboard at `https://admin.succezzdriversagency.com/admin/dashboard`
+1. **Login** at `https://succezzdriversagency.com/admin/login`
+2. **Access** the admin dashboard at `https://succezzdriversagency.com/admin/dashboard`
 3. **Manage** users, vehicles, drivers, recruitments
 4. **View** analytics and statistics
 
-The admin subdomain must be added to the Hostinger website and use the Laravel `public` directory as its document root. Add HTTPS for the subdomain after DNS is active. `ADMIN_DOMAIN` controls which host Laravel uses for admin and CMS routes.
+Admin and CMS routes use the domain configured by `ADMIN_DOMAIN` and are separated from regular-user routes by their URL paths. For this deployment, set `ADMIN_DOMAIN=succezzdriversagency.com` in the production environment so the admin portal is available at `/admin/login`.
 
 ### Email verification
 

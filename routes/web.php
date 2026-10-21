@@ -12,11 +12,11 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExportController;
 
 Route::domain(config('admin.domain'))->group(function () {
-    Route::get('/login', [AuthController::class, 'adminLoginForm'])->name('admin.login');
-    Route::post('/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
+    Route::get('/admin/login', [AuthController::class, 'adminLoginForm'])->name('admin.login');
+    Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
     Route::get('/cms/login', [AuthController::class, 'cmsLoginForm'])->name('cms.login');
     Route::post('/cms/login', [AuthController::class, 'cmsLogin'])->name('cms.login.post');
-    Route::get('/', fn () => auth()->check()
+    Route::get('/admin', fn () => auth()->check()
         ? redirect()->route('admin.dashboard')
         : redirect()->route('admin.login'))->name('admin.home');
 });

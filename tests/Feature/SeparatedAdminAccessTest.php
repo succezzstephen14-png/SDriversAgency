@@ -41,13 +41,14 @@ class SeparatedAdminAccessTest extends TestCase
             ->assertOk();
     }
 
-    public function test_admin_login_and_dashboard_use_the_admin_subdomain(): void
+    public function test_admin_login_and_dashboard_use_separate_paths_on_the_configured_domain(): void
     {
         $adminLoginUrl = route('admin.login');
         $adminDashboardUrl = route('admin.dashboard');
 
         $this->assertSame(config('admin.domain'), parse_url($adminLoginUrl, PHP_URL_HOST));
-        $this->assertSame('/login', parse_url($adminLoginUrl, PHP_URL_PATH));
+        $this->assertSame('/admin/login', parse_url($adminLoginUrl, PHP_URL_PATH));
+        $this->assertSame('/login', parse_url(route('login'), PHP_URL_PATH));
         $this->assertSame(config('admin.domain'), parse_url($adminDashboardUrl, PHP_URL_HOST));
 
         $this->get($adminLoginUrl)->assertOk();
@@ -62,7 +63,7 @@ class SeparatedAdminAccessTest extends TestCase
             ->assertRedirect(route('admin.login'));
     }
 
-    public function test_admin_can_sign_in_on_the_subdomain_and_open_the_admin_dashboard(): void
+    public function test_admin_can_sign_in_on_the_configured_domain_and_open_the_admin_dashboard(): void
     {
         $admin = User::factory()->create([
             'role' => 'admin',
