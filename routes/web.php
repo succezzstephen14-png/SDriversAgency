@@ -127,6 +127,10 @@ Route::match(['get', 'post'], '/bookings/payment/initiate', [PaymentController::
 Route::get('/payment/success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
 Route::get('/payment/cancelled', [PaymentController::class, 'paymentCancelled'])->name('payment.cancelled');
 Route::post('/payment/webhook', [PaymentController::class, 'handlePaystackCallback'])->name('payment.webhook');
+Route::post('/payments/{payment}/checkout', [PaymentController::class, 'checkout'])
+    ->whereNumber('payment')
+    ->middleware(['signed', 'throttle:5,1'])
+    ->name('payment.checkout');
 
 // Authenticated user routes
 Route::middleware(['auth', 'verified', 'not_service_customer'])->group(function () {

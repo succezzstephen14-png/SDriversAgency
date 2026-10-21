@@ -57,7 +57,7 @@ class DocumentUploadFormatsTest extends TestCase
             ])
             ->assertOk()
             ->assertViewIs('payments.paystack-form')
-            ->assertSee('Pay with Paystack')
+            ->assertSee('Continue to Paystack')
             ->assertDontSee('payWithPaystack();', false);
 
         $payment = Payment::where('user_id', $user->id)->where('type', 'driver')->firstOrFail();
@@ -95,7 +95,7 @@ class DocumentUploadFormatsTest extends TestCase
             ])
             ->assertOk()
             ->assertViewIs('payments.paystack-form')
-            ->assertSee('Pay with Paystack')
+            ->assertSee('Continue to Paystack')
             ->assertDontSee('payWithPaystack();', false);
 
         $payment = Payment::where('user_id', $user->id)->where('type', 'vehicle')->firstOrFail();

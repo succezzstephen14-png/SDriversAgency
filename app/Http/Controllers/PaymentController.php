@@ -10,11 +10,136 @@ use App\Models\Recruitment;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\Client\ConnectionException;
 
 class PaymentController extends Controller
 {
+    public function checkout(Request $request, Payment $payment)
+    {
+        abort_unless(
+            ! Auth::check() || (string) Auth::id() === (string) $payment->user_id,
+            403
+        );
+
+        if ($payment->status !== 'pending') {
+            return redirect()->route('payment.success', ['reference' => $payment->reference]);
+        }
+
+        $secretKey = config('services.paystack.secret_key');
+        $email = $payment->user?->email ?? $payment->data['guest_email'] ?? null;
+
+        if (! $secretKey || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Log::error('Paystack checkout could not be initialized due to missing configuration.', [
+                'payment_id' => $payment->id,
+                'has_secret_key' => (bool) $secretKey,
+                'has_valid_email' => (bool) filter_var($email, FILTER_VALIDATE_EMAIL),
+            ]);
+
+            return $this->checkoutError($payment, 'Payment could not be started. Please contact support.');
+        }
+
+        $payment = DB::transaction(function () use ($payment) {
+            $payment = Payment::whereKey($payment->getKey())->lockForUpdate()->firstOrFail();
+            abort_unless($payment->status === 'pending', 422, 'This payment is no longer pending.');
+
+            $previousReference = $payment->reference;
+            $this->renewPaymentReference($payment, $this->paymentReferencePrefix($payment));
+
+            if (! empty($payment->data['service_request_id'])) {
+                ServiceRequest::whereKey($payment->data['service_request_id'])
+                    ->where('user_id', $payment->user_id)
+                    ->where('payment_reference', $previousReference)
+                    ->update(['payment_reference' => $payment->reference]);
+            }
+
+            if (! empty($payment->data['booking_date'])) {
+                Booking::where('payment_reference', $previousReference)
+                    ->update(['payment_reference' => $payment->reference]);
+            }
+
+            return $payment->fresh();
+        });
+
+        try {
+            $response = Http::withToken($secretKey)
+                ->acceptJson()
+                ->asJson()
+                ->timeout(15)
+                ->post('https://api.paystack.co/transaction/initialize', [
+                    'email' => $email,
+                    'amount' => $payment->amount,
+                    'reference' => $payment->reference,
+                    'currency' => 'GHS',
+                    'callback_url' => route('payment.success'),
+                ]);
+        } catch (ConnectionException $exception) {
+            Log::error('Paystack checkout initialization request failed to connect.', [
+                'payment_id' => $payment->id,
+                'reference' => $payment->reference,
+                'exception' => $exception::class,
+            ]);
+
+            return $this->checkoutError($payment, 'Paystack could not be reached. Please try again.');
+        }
+
+        $authorizationUrl = $response->json('data.authorization_url');
+        $responseReference = $response->json('data.reference');
+        $authorizationHost = is_string($authorizationUrl) ? parse_url($authorizationUrl, PHP_URL_HOST) : null;
+
+        if (
+            ! $response->successful()
+            || $response->json('status') !== true
+            || $responseReference !== $payment->reference
+            || ! is_string($authorizationUrl)
+            || parse_url($authorizationUrl, PHP_URL_SCHEME) !== 'https'
+            || $authorizationHost !== 'checkout.paystack.com'
+        ) {
+            Log::error('Paystack checkout initialization returned an invalid response.', [
+                'payment_id' => $payment->id,
+                'reference' => $payment->reference,
+                'http_status' => $response->status(),
+                'gateway_message' => $response->json('message'),
+            ]);
+
+            return $this->checkoutError($payment, 'Paystack could not start this payment. Please try again.');
+        }
+
+        return redirect()->away($authorizationUrl);
+    }
+
+    private function checkoutError(Payment $payment, string $message)
+    {
+        return response()
+            ->view('payments.paystack-form', [
+                'payment' => $payment,
+                'amount' => $payment->amount,
+                'checkoutError' => $message,
+            ], 200);
+    }
+
+    private function paymentReferencePrefix(Payment $payment): string
+    {
+        if (! empty($payment->data['service_request_id'])) {
+            return 'SRQ';
+        }
+
+        if (! empty($payment->data['booking_date'])) {
+            return 'BKNG';
+        }
+
+        return match ($payment->type) {
+            'driver' => 'DRV',
+            'vehicle' => 'VEH',
+            'recruitment' => 'REC',
+            default => 'PAY',
+        };
+    }
+
     /**
      * Initiate Paystack payment for driver registration.
      */
