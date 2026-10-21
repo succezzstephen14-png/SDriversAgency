@@ -1031,37 +1031,6 @@ html {
     </button>
 </div>
 
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="text-center mb-4">
-            <h2 class="section-title">Request a driver or vehicle</h2>
-            <p class="section-subtitle">Create a separate service account to submit requests, review assignments, and pay after approval.</p>
-        </div>
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-5">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body p-4 text-center">
-                        <i class="fas fa-id-card text-primary fs-1 mb-3"></i>
-                        <h3 class="h4">Request a driver</h3>
-                        <p class="text-muted">Long journey, personal, and daily sales drivers.</p>
-                        <a class="btn btn-primary" href="{{ route('service.register.driver') }}">Request a driver</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-5">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body p-4 text-center">
-                        <i class="fas fa-car text-primary fs-1 mb-3"></i>
-                        <h3 class="h4">Request a vehicle</h3>
-                        <p class="text-muted">Daily sales, work and pay, COMFI - TROSKI, and contract vehicles.</p>
-                        <a class="btn btn-primary" href="{{ route('service.register.vehicle') }}">Request a vehicle</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
 @if($siteSettings && $siteSettings->home_page_content)
 <section class="custom-content-section py-5">
     <div class="container">
