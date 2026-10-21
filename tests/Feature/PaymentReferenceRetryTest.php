@@ -29,7 +29,9 @@ class PaymentReferenceRetryTest extends TestCase
         $this->actingAs($user)
             ->post(route('driver.payment.initiate'))
             ->assertOk()
-            ->assertViewIs('payments.paystack-form');
+            ->assertViewIs('payments.paystack-form')
+            ->assertSee('Pay with Paystack')
+            ->assertDontSee('payWithPaystack();', false);
 
         $payment->refresh();
         $this->assertNotSame($oldReference, $payment->reference);
@@ -76,7 +78,9 @@ class PaymentReferenceRetryTest extends TestCase
                 )],
             ])
             ->assertOk()
-            ->assertViewIs('payments.paystack-form');
+            ->assertViewIs('payments.paystack-form')
+            ->assertSee('Pay with Paystack')
+            ->assertDontSee('payWithPaystack();', false);
 
         $payment->refresh();
         $this->assertNotSame($oldReference, $payment->reference);

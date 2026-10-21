@@ -5,7 +5,6 @@
 @php
     $paystackPublicKey = config('services.paystack.public_key');
     $paymentEmail = Auth::check() ? Auth::user()->email : ($payment->data['guest_email'] ?? 'guest@example.com');
-    $autoOpenPaystack = in_array($payment->type, ['driver', 'vehicle'], true);
 @endphp
 
 @section('content')
@@ -96,8 +95,7 @@ const paystackConfig = {
     email: @json($paymentEmail),
     amount: @json($amount),
     reference: @json($payment->reference),
-    callbackUrl: @json(route('payment.success')),
-    autoOpen: @json($autoOpenPaystack)
+    callbackUrl: @json(route('payment.success'))
 };
 
 function payWithPaystack() {
@@ -156,9 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    if (paystackBtn && paystackConfig.key && paystackConfig.autoOpen) {
-        payWithPaystack();
-    }
 });
 </script>
 @endsection

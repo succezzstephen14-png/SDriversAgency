@@ -57,7 +57,8 @@ class DocumentUploadFormatsTest extends TestCase
             ])
             ->assertOk()
             ->assertViewIs('payments.paystack-form')
-            ->assertSee('payWithPaystack();', false);
+            ->assertSee('Pay with Paystack')
+            ->assertDontSee('payWithPaystack();', false);
 
         $payment = Payment::where('user_id', $user->id)->where('type', 'driver')->firstOrFail();
         foreach (['profile_picture', 'license_file', 'ghana_card_file', 'passport_file', 'guarantor_ghana_card_file', 'guarantor_passport_file', 'second_guarantor_ghana_card_file', 'second_guarantor_passport_file'] as $field) {
@@ -94,7 +95,8 @@ class DocumentUploadFormatsTest extends TestCase
             ])
             ->assertOk()
             ->assertViewIs('payments.paystack-form')
-            ->assertSee('payWithPaystack();', false);
+            ->assertSee('Pay with Paystack')
+            ->assertDontSee('payWithPaystack();', false);
 
         $payment = Payment::where('user_id', $user->id)->where('type', 'vehicle')->firstOrFail();
         foreach (['registration_document', 'insurance_document', 'roadworthiness_certificate'] as $field) {
