@@ -62,7 +62,7 @@ class DriverController extends Controller
             'license_number' => [
                 'required',
                 'string',
-                'regex:/^ADB-\d{8}-\d{5}$/',
+                'max:50',
                 Rule::unique('drivers', 'license_number'),
                 function ($attribute, $value, $fail) {
                     // Prevent a driver license number from matching any vehicle license plate
@@ -144,7 +144,7 @@ class DriverController extends Controller
             'license_number' => [
                 'required',
                 'string',
-                'regex:/^ADB-\d{8}-\d{5}$/',
+                'max:50',
                 Rule::unique('drivers', 'license_number')->ignore($driver->id),
                 function ($attribute, $value, $fail) {
                     if (Vehicle::where('license_plate', $value)->exists()) {

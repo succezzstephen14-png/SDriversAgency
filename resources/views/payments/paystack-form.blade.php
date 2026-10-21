@@ -5,6 +5,7 @@
 @php
     $paystackPublicKey = config('services.paystack.public_key');
     $paymentEmail = Auth::check() ? Auth::user()->email : ($payment->data['guest_email'] ?? 'guest@example.com');
+    $autoOpenPaystack = in_array($payment->type, ['driver', 'vehicle'], true);
 @endphp
 
 @section('content')
@@ -95,7 +96,8 @@ const paystackConfig = {
     email: @json($paymentEmail),
     amount: @json($amount),
     reference: @json($payment->reference),
-    callbackUrl: @json(route('payment.success'))
+    callbackUrl: @json(route('payment.success')),
+    autoOpen: @json($autoOpenPaystack)
 };
 
 function payWithPaystack() {
@@ -151,6 +153,11 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Paystack library not loaded');
         paystackBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Payment Unavailable';
         paystackBtn.disabled = true;
+        return;
+    }
+
+    if (paystackBtn && paystackConfig.key && paystackConfig.autoOpen) {
+        payWithPaystack();
     }
 });
 </script>

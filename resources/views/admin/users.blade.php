@@ -14,6 +14,11 @@
                 <p>Comprehensive user administration and account management</p>
             </div>
             <div class="d-flex gap-2">
+                <a href="{{ route('admin.users', ['profile_updates' => 1]) }}" class="btn {{ request()->boolean('profile_updates') ? 'btn-primary' : 'btn-outline-warning' }}">
+                    <i class="fas fa-user-clock"></i>
+                    Profile Updates Awaiting Review
+                    <span class="badge text-bg-light ms-1">{{ $metrics['pending_profile_updates'] }}</span>
+                </a>
                 <button onclick="exportUsers()" class="btn btn-outline-primary">
                     <i class="fas fa-download"></i> Export Users
                 </button>
@@ -373,7 +378,9 @@
                                     <h4>{{ $user->name }}</h4>
                                     <p>{{ $user->email }}</p>
                                     @if($user->pending_profile_changes)
-                                        <span class="status-badge pending"><i class="fas fa-user-clock"></i> Profile review needed</span>
+                                        <a href="{{ route('admin.users.edit', $user) }}" class="status-badge pending text-decoration-none">
+                                            <i class="fas fa-user-clock"></i> Profile review needed
+                                        </a>
                                     @endif
                                 </div>
                             </div>

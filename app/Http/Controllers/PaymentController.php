@@ -37,8 +37,10 @@ class PaymentController extends Controller
             ->first();
 
         if ($existingPending) {
-            return redirect()->route('payment.success', ['reference' => $existingPending->reference])
-                ->with('info', 'You already have a pending driver payment. Please complete it before submitting another profile.');
+            $payment = $existingPending;
+            $amount = $payment->amount;
+
+            return view('payments.paystack-form', compact('payment', 'amount'));
         }
 
         $validated = $request->validate([
@@ -51,7 +53,7 @@ class PaymentController extends Controller
             'license_number' => [
                 'required',
                 'string',
-                'regex:/^ADB-\d{8}-\d{5}$/',
+                'max:50',
                 Rule::unique('drivers', 'license_number'),
                 function ($attribute, $value, $fail) {
                     if (Vehicle::where('license_plate', $value)->exists()) {
@@ -177,8 +179,10 @@ class PaymentController extends Controller
 
         if ($existingPending) {
             \Log::info('Found existing pending payment for vehicle', ['reference' => $existingPending->reference]);
-            return redirect()->route('payment.success', ['reference' => $existingPending->reference])
-                ->with('info', 'You already have a pending payment for this vehicle. Please complete your payment.');
+            $payment = $existingPending;
+            $amount = $payment->amount;
+
+            return view('payments.paystack-form', compact('payment', 'amount'));
         }
 
         // Handle file uploads

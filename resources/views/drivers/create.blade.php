@@ -83,8 +83,8 @@
                                         <label for="license_number" class="form-label">License Number *</label>
                                         <input type="text" class="form-control @error('license_number') is-invalid @enderror" 
                                                id="license_number" name="license_number" value="{{ old('license_number') }}"
-                                               placeholder="ADB-00000000-11111" pattern="ADB-[0-9]{8}-[0-9]{5}" maxlength="18" required>
-                                        <small class="text-muted d-block mt-1">Format: ADB-00000000-11111</small>
+                                               placeholder="Enter your driver's license number" maxlength="50" required>
+                                        <small class="text-muted d-block mt-1">Enter the license number as printed on your license.</small>
                                         @error('license_number') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 

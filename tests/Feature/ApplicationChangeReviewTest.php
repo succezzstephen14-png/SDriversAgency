@@ -149,6 +149,24 @@ class ApplicationChangeReviewTest extends TestCase
         $this->assertSame('Current Name', $user->fresh()->name);
         $this->assertSame('Requested Name', $user->fresh()->pending_profile_changes['name']);
 
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->get(route('admin.users', ['profile_updates' => 1]))
+            ->assertOk()
+            ->assertSee('Profile Updates Awaiting Review')
+            ->assertSee('Current Name')
+            ->assertSee('Profile review needed');
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.edit', $user))
+            ->assertOk()
+            ->assertSee('User Profile')
+            ->assertSee('Profile Changes Awaiting Review')
+            ->assertSee('Current Name')
+            ->assertSee('Requested Name')
+            ->assertSee(route('admin.users.profile-changes.approve', $user), false)
+            ->assertSee(route('admin.users.profile-changes.reject', $user), false);
+
         $this->actingAs($user)
             ->put(route('profile.update'), [
                 'name' => 'Another Name',
@@ -157,7 +175,6 @@ class ApplicationChangeReviewTest extends TestCase
             ])
             ->assertSessionHasErrors('profile');
 
-        $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin)
             ->post(route('admin.users.profile-changes.approve', $user))
             ->assertRedirect(route('admin.users.edit', $user));

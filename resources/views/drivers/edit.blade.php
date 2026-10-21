@@ -24,9 +24,9 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="license_number" class="form-label">License Number</label>
-                                <input type="text" class="form-control @error('license_number') is-invalid @enderror" id="license_number" name="license_number" value="{{ old('license_number', $driver->license_number) }}" placeholder="ADB-00000000-11111" pattern="ADB-[0-9]{8}-[0-9]{5}" maxlength="18" required>
+                                <input type="text" class="form-control @error('license_number') is-invalid @enderror" id="license_number" name="license_number" value="{{ old('license_number', $driver->license_number) }}" placeholder="Enter your driver's license number" maxlength="50" required>
                                 @error('license_number') <small class="text-danger">{{ $message }}</small> @enderror
-                                <small class="form-text text-muted">Format: ADB-00000000-11111</small>
+                                <small class="form-text text-muted">Enter the license number as printed on your license.</small>
                             </div>
 
                             <div class="col-md-6">

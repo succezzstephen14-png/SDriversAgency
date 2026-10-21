@@ -236,6 +236,18 @@
             <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
         @endif
 
+        <div class="panel">
+            <h3><i class="fas fa-address-card"></i> User Profile</h3>
+            <div class="review-values">
+                <div class="review-value"><strong>Full name</strong><div>{{ $user->name }}</div></div>
+                <div class="review-value"><strong>Email</strong><div>{{ $user->email }}</div><small>{{ $user->hasVerifiedEmail() ? 'Email verified' : 'Email not verified' }}</small></div>
+                <div class="review-value"><strong>Phone</strong><div>{{ $user->phone ?: 'Not provided' }}</div></div>
+                <div class="review-value"><strong>Address</strong><div>{{ $user->address ?: 'Not provided' }}</div></div>
+                <div class="review-value"><strong>Account role</strong><div>{{ ucfirst(str_replace('_', ' ', $user->role)) }}</div></div>
+                <div class="review-value"><strong>Joined</strong><div>{{ $user->created_at?->format('M j, Y') ?? 'Unknown' }}</div></div>
+            </div>
+        </div>
+
         @if($user->pending_profile_changes)
             <div class="panel">
                 <h3><i class="fas fa-user-clock"></i> Profile Changes Awaiting Review</h3>

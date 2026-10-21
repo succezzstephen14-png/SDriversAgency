@@ -28,7 +28,7 @@ class DocumentUploadFormatsTest extends TestCase
                     'profile.png',
                     base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
                 ),
-                'license_number' => 'ADB-00000000-11111',
+                'license_number' => 'DL-12345678',
                 'license_expiry' => now()->addYears(2)->toDateString(),
                 'license_class' => 'B',
                 'license_file' => UploadedFile::fake()->create('license.pdf', 100, 'application/pdf'),
@@ -40,18 +40,27 @@ class DocumentUploadFormatsTest extends TestCase
                 'guarantor_phone' => '0241111111',
                 'g_ghana_card_no' => 'GHA-001122330-1',
                 'guarantor_ghana_card_file' => UploadedFile::fake()->create('guarantor-card.pdf', 100, 'application/pdf'),
+                'guarantor_passport_file' => UploadedFile::fake()->createWithContent(
+                    'guarantor-passport.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+                ),
                 'relationship' => 'family',
                 'second_guarantor' => 'Second Guarantor',
                 'second_guarantor_phone' => '0242222222',
                 'second_g_ghana_card_no' => 'GHA-112233445-6',
                 'second_guarantor_ghana_card_file' => UploadedFile::fake()->create('second-guarantor-card.pdf', 100, 'application/pdf'),
+                'second_guarantor_passport_file' => UploadedFile::fake()->createWithContent(
+                    'second-guarantor-passport.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+                ),
                 'second_relationship' => 'friend',
             ])
             ->assertOk()
-            ->assertViewIs('payments.paystack-form');
+            ->assertViewIs('payments.paystack-form')
+            ->assertSee('payWithPaystack();', false);
 
         $payment = Payment::where('user_id', $user->id)->where('type', 'driver')->firstOrFail();
-        foreach (['profile_picture', 'license_file', 'ghana_card_file', 'passport_file', 'guarantor_ghana_card_file', 'second_guarantor_ghana_card_file'] as $field) {
+        foreach (['profile_picture', 'license_file', 'ghana_card_file', 'passport_file', 'guarantor_ghana_card_file', 'guarantor_passport_file', 'second_guarantor_ghana_card_file', 'second_guarantor_passport_file'] as $field) {
             Storage::disk('public')->assertExists($payment->data[$field]);
         }
         $this->assertSame('Experienced, careful driver.', $payment->data['bio']);
@@ -84,7 +93,8 @@ class DocumentUploadFormatsTest extends TestCase
                 )],
             ])
             ->assertOk()
-            ->assertViewIs('payments.paystack-form');
+            ->assertViewIs('payments.paystack-form')
+            ->assertSee('payWithPaystack();', false);
 
         $payment = Payment::where('user_id', $user->id)->where('type', 'vehicle')->firstOrFail();
         foreach (['registration_document', 'insurance_document', 'roadworthiness_certificate'] as $field) {
@@ -136,7 +146,8 @@ class DocumentUploadFormatsTest extends TestCase
         $this->actingAs($user)
             ->get(route('drivers.create'))
             ->assertOk()
-            ->assertSee('pattern="ADB-[0-9]{8}-[0-9]{5}"', false)
+            ->assertSee('placeholder="Enter your driver\'s license number"', false)
+            ->assertDontSee('pattern="ADB-', false)
             ->assertSee('pattern="GHA-[0-9]{9}-[0-9]"', false)
             ->assertSee('id="profile_picture" name="profile_picture"', false)
             ->assertSee('accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" required', false)
@@ -157,13 +168,13 @@ class DocumentUploadFormatsTest extends TestCase
             ->assertSee('name="registration_document" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"', false);
     }
 
-    public function test_driver_application_rejects_numbers_outside_the_requested_formats(): void
+    public function test_driver_application_rejects_missing_license_and_malformed_card_numbers(): void
     {
         $user = User::factory()->create(['role' => 'user']);
 
         $this->actingAs($user)
             ->post(route('drivers.store'), [
-                'license_number' => 'DL-123456',
+                'license_number' => '',
                 'ghana_card_no' => 'GHA-12345678-1',
                 'g_ghana_card_no' => 'GHA-12345678-1',
             ])

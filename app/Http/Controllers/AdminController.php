@@ -167,6 +167,10 @@ class AdminController extends Controller
             }
         }
 
+        if ($request->boolean('profile_updates')) {
+            $query->whereNotNull('pending_profile_changes');
+        }
+
         $users = $query->paginate(15)->withQueryString();
 
         $metrics = [
@@ -177,6 +181,7 @@ class AdminController extends Controller
             'pending_onboarding' => User::where('onboarding_completed', false)->count(),
             'new_last_30_days' => User::where('created_at', '>=', now()->subDays(30))->count(),
             'active_this_month' => User::where('updated_at', '>=', now()->startOfMonth())->count(),
+            'pending_profile_updates' => User::whereNotNull('pending_profile_changes')->count(),
         ];
 
         return view('admin.users', compact('users', 'metrics'));
@@ -1979,7 +1984,7 @@ class AdminController extends Controller
             'license_number' => [
                 'required',
                 'string',
-                'regex:/^ADB-\d{8}-\d{5}$/',
+                'max:50',
                 'unique:drivers,license_number,' . $driver->id,
             ],
             'license_expiry' => 'required|date|after:today',
