@@ -512,6 +512,9 @@
 
         <form method="POST" action="{{ $actionRoute ?? route('login.post') }}">
             @csrf
+            @if(($loginType ?? 'user') === 'service_customer' && in_array($requestType ?? null, ['driver', 'vehicle'], true))
+                <input type="hidden" name="request_type" value="{{ $requestType }}">
+            @endif
 
             @if($errors->any())
                 <div class="alert alert-danger">

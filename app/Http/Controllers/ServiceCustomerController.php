@@ -18,6 +18,15 @@ class ServiceCustomerController extends Controller
     {
         $requestType = $requestType ?? $request->query('type', 'driver');
         $requestType = in_array($requestType, ['driver', 'vehicle'], true) ? $requestType : 'driver';
+        $request->session()->put('service.request_type', $requestType);
+
+        if ($request->user()?->isServiceCustomer()) {
+            if (!$request->user()->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+
+            return redirect()->route('service.requests.create', $requestType);
+        }
 
         return view('service.register', [
             'requestType' => $requestType,
@@ -30,7 +39,9 @@ class ServiceCustomerController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', Password::defaults(), 'confirmed'],
+            'request_type' => ['required', Rule::in(['driver', 'vehicle'])],
         ]);
+        $request->session()->put('service.request_type', $validated['request_type']);
 
         $user = User::create([
             'name' => $validated['name'],

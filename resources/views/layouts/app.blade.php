@@ -729,6 +729,16 @@
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('recruitments.*') ? 'active' : '' }}" href="{{ route('recruitments.index') }}">Recruitment</a></li>
                     @endif
 
+                    <li class="nav-item dropdown">
+                        <a class="btn btn-primary dropdown-toggle ms-lg-3 my-2 my-lg-0" href="#" id="serviceRequestMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Request a service
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="serviceRequestMenu">
+                            <li><a class="dropdown-item" href="{{ route('service.register.driver') }}"><i class="fas fa-id-card me-2"></i>Request a driver</a></li>
+                            <li><a class="dropdown-item" href="{{ route('service.register.vehicle') }}"><i class="fas fa-car me-2"></i>Request a vehicle</a></li>
+                        </ul>
+                    </li>
+
                     @auth
                         <li class="nav-item"><a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ route('bookings.my-bookings') }}">My Bookings</a></li>

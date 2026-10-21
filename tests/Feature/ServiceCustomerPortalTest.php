@@ -21,7 +21,9 @@ class ServiceCustomerPortalTest extends TestCase
         Mail::fake();
         $this->get(route('service.register.driver'))
             ->assertOk()
-            ->assertSee('You are starting a driver request.');
+            ->assertSee('You are starting a driver request.')
+            ->assertSee('name="request_type" value="driver"', false)
+            ->assertSee('Request a service');
         $this->get(route('service.login'))->assertOk();
 
         $response = $this->post(route('service.register.post'), [
@@ -29,6 +31,7 @@ class ServiceCustomerPortalTest extends TestCase
             'email' => 'service-customer@example.test',
             'password' => 'Safe-password-123!',
             'password_confirmation' => 'Safe-password-123!',
+            'request_type' => 'driver',
         ]);
 
         $user = User::where('email', 'service-customer@example.test')->firstOrFail();
@@ -44,11 +47,33 @@ class ServiceCustomerPortalTest extends TestCase
             now()->addMinutes(10),
             ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())]
         );
-        $this->actingAs($user)->get($verificationUrl)->assertRedirect(route('service.dashboard'));
+        $this->actingAs($user)->get($verificationUrl)->assertRedirect(route('service.requests.create', 'driver'));
 
         $this->actingAs($user)->get(route('service.dashboard'))->assertOk();
         $this->actingAs($user)->get(route('dashboard'))->assertRedirect(route('service.dashboard'));
         $this->actingAs($user)->get(route('vehicles.create'))->assertRedirect(route('service.dashboard'));
+    }
+
+    public function test_existing_service_customer_login_returns_to_the_selected_request_form(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'service_customer',
+            'password' => 'Safe-password-123!',
+        ]);
+
+        $this->get(route('service.login', ['requestType' => 'vehicle']))
+            ->assertOk()
+            ->assertSee('name="request_type" value="vehicle"', false);
+
+        $this->post(route('service.login.post'), [
+            'email' => $user->email,
+            'password' => 'Safe-password-123!',
+            'request_type' => 'vehicle',
+        ])->assertRedirect(route('service.requests.create', 'vehicle'));
+
+        $this->actingAs($user)
+            ->get(route('service.register.vehicle'))
+            ->assertRedirect(route('service.requests.create', 'vehicle'));
     }
 
     public function test_service_customers_can_submit_separate_driver_and_vehicle_requests(): void

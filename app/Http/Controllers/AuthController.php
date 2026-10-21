@@ -38,14 +38,20 @@ class AuthController extends Controller
         ]);
     }
 
-    public function serviceCustomerLoginForm()
+    public function serviceCustomerLoginForm(Request $request)
     {
+        $requestType = $request->query('requestType');
+        if (in_array($requestType, ['driver', 'vehicle'], true)) {
+            $request->session()->put('service.request_type', $requestType);
+        }
+
         return view('auth.login', [
             'loginType' => 'service_customer',
             'title' => 'Service Customer Login',
             'subtitle' => 'Sign in to request drivers and vehicles and track your service requests.',
             'actionRoute' => route('service.login.post'),
             'showAlternateLinks' => false,
+            'requestType' => $request->session()->get('service.request_type'),
         ]);
     }
 
@@ -66,6 +72,9 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
+        if ($loginType === 'service_customer' && in_array($request->input('request_type'), ['driver', 'vehicle'], true)) {
+            $request->session()->put('service.request_type', $request->input('request_type'));
+        }
 
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors([
@@ -129,6 +138,11 @@ class AuthController extends Controller
                 return redirect()->route('verification.notice');
             }
 
+            $requestType = $request->session()->pull('service.request_type');
+            if (in_array($requestType, ['driver', 'vehicle'], true)) {
+                return redirect()->intended(route('service.requests.create', $requestType));
+            }
+
             return redirect()->intended(route('service.dashboard'));
         }
 
@@ -185,7 +199,7 @@ class AuthController extends Controller
     public function verificationNotice()
     {
         if (Auth::user()->hasVerifiedEmail()) {
-            return redirect()->route(Auth::user()->isServiceCustomer() ? 'service.dashboard' : 'dashboard');
+            return $this->verifiedDestination(Auth::user());
         }
 
         return view('auth.verify-email');
@@ -194,24 +208,38 @@ class AuthController extends Controller
     public function verifyEmail(EmailVerificationRequest $request)
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route($request->user()->isServiceCustomer() ? 'service.dashboard' : 'dashboard');
+            return $this->verifiedDestination($request->user());
         }
 
         $request->fulfill();
 
-        return redirect()->route($request->user()->isServiceCustomer() ? 'service.dashboard' : 'dashboard')
+        return $this->verifiedDestination($request->user())
             ->with('status', 'email-verified');
     }
 
     public function resendVerificationEmail(Request $request)
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route($request->user()->isServiceCustomer() ? 'service.dashboard' : 'dashboard');
+            return $this->verifiedDestination($request->user());
         }
 
         $request->user()->sendEmailVerificationNotification();
 
         return back()->with('status', 'verification-link-sent');
+    }
+
+    private function verifiedDestination(User $user): \Illuminate\Http\RedirectResponse
+    {
+        if ($user->isServiceCustomer()) {
+            $requestType = request()->session()->pull('service.request_type');
+            if (in_array($requestType, ['driver', 'vehicle'], true)) {
+                return redirect()->route('service.requests.create', $requestType);
+            }
+
+            return redirect()->route('service.dashboard');
+        }
+
+        return redirect()->route('dashboard');
     }
 
     public function logout(Request $request)

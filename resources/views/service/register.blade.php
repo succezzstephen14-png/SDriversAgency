@@ -11,6 +11,7 @@
             <p class="text-muted">You are starting a {{ $requestType }} request. After verifying your email, you can submit requests for drivers and vehicles from your dashboard.</p>
             <form method="POST" action="{{ route('service.register.post') }}">
                 @csrf
+                <input type="hidden" name="request_type" value="{{ $requestType }}">
                 <div class="mb-3">
                     <label for="name" class="form-label">Full name</label>
                     <input id="name" name="name" class="form-control" value="{{ old('name') }}" required autocomplete="name">
@@ -32,7 +33,7 @@
                 </div>
                 <button class="btn btn-primary w-100" type="submit">Create account and verify email</button>
             </form>
-            <p class="text-center mt-4 mb-0">Already registered? <a href="{{ route('service.login') }}">Sign in</a></p>
+            <p class="text-center mt-4 mb-0">Already registered? <a href="{{ route('service.login', ['requestType' => $requestType]) }}">Sign in</a></p>
         </div>
     </div>
 </div>
