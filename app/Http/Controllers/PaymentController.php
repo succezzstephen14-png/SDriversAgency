@@ -407,8 +407,18 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Payment not found'], 404);
         }
 
-        // Prevent duplicate processing
         if ($payment->status === 'completed') {
+            $resourceCreated = $this->createResourceFromPayment($payment);
+            if ($resourceCreated === false) {
+                \Log::error('Completed payment resource creation failed during webhook retry.', [
+                    'payment_id' => $payment->id,
+                    'reference' => $reference,
+                    'type' => $payment->type,
+                ]);
+
+                return response()->json(['message' => 'Payment is complete but registration processing failed'], 500);
+            }
+
             return response()->json(['message' => 'Already processed']);
         }
 
@@ -423,7 +433,16 @@ class PaymentController extends Controller
 
             $payment->update(['status' => 'completed']);
 
-            $this->createResourceFromPayment($payment);
+            $resourceCreated = $this->createResourceFromPayment($payment);
+            if ($resourceCreated === false) {
+                \Log::error('Verified payment resource creation failed during webhook processing.', [
+                    'payment_id' => $payment->id,
+                    'reference' => $reference,
+                    'type' => $payment->type,
+                ]);
+
+                return response()->json(['message' => 'Payment is complete but registration processing failed'], 500);
+            }
 
             return response()->json(['message' => 'Payment verified successfully']);
         }

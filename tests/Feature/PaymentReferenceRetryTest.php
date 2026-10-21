@@ -22,7 +22,7 @@ class PaymentReferenceRetryTest extends TestCase
             'reference' => $oldReference,
             'amount' => 20,
             'type' => 'driver',
-            'data' => ['license_number' => 'DL-12345678'],
+            'data' => $this->validDriverPaymentData(),
             'status' => 'pending',
         ]);
 
@@ -41,6 +41,10 @@ class PaymentReferenceRetryTest extends TestCase
         $this->post(route('payment.webhook'), ['reference' => $oldReference])
             ->assertOk()
             ->assertJson(['message' => 'Already processed']);
+        $this->assertDatabaseHas('drivers', [
+            'user_id' => $user->id,
+            'payment_reference' => $payment->fresh()->reference,
+        ]);
     }
 
     public function test_retrying_pending_vehicle_payment_uses_a_new_reference(): void
@@ -84,6 +88,35 @@ class PaymentReferenceRetryTest extends TestCase
 
         $payment->refresh();
         $this->assertNotSame($oldReference, $payment->reference);
-        $this->assertContains($oldReference, $payment->data['previous_references']);
+        $this        ->assertContains($oldReference, $payment->data['previous_references']);
+    }
+
+    private function validDriverPaymentData(): array
+    {
+        return [
+        'license_number' => 'DL-12345678',
+        'license_expiry' => now()->addYear()->toDateString(),
+        'license_class' => 'B',
+        'experience_years' => 5,
+        'emergency_person' => 'Emergency Contact',
+        'emergency_phone' => '0200000000',
+        'bio' => 'Experienced driver.',
+        'profile_picture' => 'documents/profile.jpg',
+        'license_file' => 'documents/license.pdf',
+        'ghana_card_no' => 'GHA-123456789-0',
+        'ghana_card_file' => 'documents/ghana-card.pdf',
+        'guarantor' => 'First Guarantor',
+        'guarantor_phone' => '0200000001',
+        'g_ghana_card_no' => 'GHA-123456780-1',
+        'guarantor_ghana_card_file' => 'documents/guarantor-id.pdf',
+        'guarantor_passport_file' => 'documents/guarantor.jpg',
+        'relationship' => 'family',
+        'second_guarantor' => 'Second Guarantor',
+        'second_guarantor_phone' => '0200000002',
+        'second_g_ghana_card_no' => 'GHA-123456781-2',
+        'second_guarantor_ghana_card_file' => 'documents/second-guarantor-id.pdf',
+        'second_guarantor_passport_file' => 'documents/second-guarantor.jpg',
+        'second_relationship' => 'friend',
+        ];
     }
 }
