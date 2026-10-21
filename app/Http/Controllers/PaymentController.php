@@ -37,6 +37,7 @@ class PaymentController extends Controller
             ->first();
 
         if ($existingPending) {
+            $this->renewPaymentReference($existingPending, 'DRV');
             $payment = $existingPending;
             $amount = $payment->amount;
 
@@ -103,7 +104,7 @@ class PaymentController extends Controller
         }
 
         $amount = 20; // GHS 0.20 in pesewas
-        $reference = 'DRV-' . strtoupper(Str::random(12));
+        $reference = $this->generateUniquePaymentReference('DRV');
 
         $payment = Payment::create([
             'user_id' => Auth::id(),
@@ -179,6 +180,7 @@ class PaymentController extends Controller
 
         if ($existingPending) {
             \Log::info('Found existing pending payment for vehicle', ['reference' => $existingPending->reference]);
+            $this->renewPaymentReference($existingPending, 'VEH');
             $payment = $existingPending;
             $amount = $payment->amount;
 
@@ -203,7 +205,7 @@ class PaymentController extends Controller
         }
 
         $amount = 20; // GHS 0.20 in pesewas
-        $reference = 'VEH-' . strtoupper(Str::random(12));
+        $reference = $this->generateUniquePaymentReference('VEH');
 
         $payment = Payment::create([
             'user_id' => Auth::id(),
@@ -399,7 +401,7 @@ class PaymentController extends Controller
     public function handlePaystackCallback(Request $request)
     {
         $reference = $request->input('reference');
-        $payment = Payment::where('reference', $reference)->first();
+        $payment = $this->findPaymentByReference($reference);
 
         if (!$payment) {
             return response()->json(['message' => 'Payment not found'], 404);
@@ -438,7 +440,7 @@ class PaymentController extends Controller
         $reference = $request->input('reference');
         \Log::info('Payment success callback', ['reference' => $reference]);
 
-        $payment = Payment::where('reference', $reference)->first();
+        $payment = $this->findPaymentByReference($reference);
 
         if (!$payment) {
             \Log::error('Payment not found', ['reference' => $reference]);
@@ -518,13 +520,50 @@ class PaymentController extends Controller
     public function paymentCancelled(Request $request)
     {
         $reference = $request->input('reference');
-        $payment = Payment::where('reference', $reference)->first();
+        $payment = $this->findPaymentByReference($reference);
 
-        if ($payment) {
+        if ($payment && $payment->reference === $reference) {
             $payment->update(['status' => 'cancelled']);
         }
 
         return redirect()->route('home')->with('info', 'Payment cancelled.');
+    }
+
+    private function renewPaymentReference(Payment $payment, string $prefix): void
+    {
+        $data = $payment->data ?? [];
+        $previousReferences = $data['previous_references'] ?? [];
+        $previousReferences[] = $payment->reference;
+
+        $reference = $this->generateUniquePaymentReference($prefix, $previousReferences);
+        $data['previous_references'] = array_values(array_unique($previousReferences));
+        $payment->data = $data;
+        $payment->reference = $reference;
+        $payment->save();
+    }
+
+    private function generateUniquePaymentReference(string $prefix, array $excludedReferences = []): string
+    {
+        do {
+            $reference = $prefix . '-' . strtoupper(Str::random(24));
+        } while (
+            Payment::where('reference', $reference)->exists()
+            || Payment::whereJsonContains('data->previous_references', $reference)->exists()
+            || in_array($reference, $excludedReferences, true)
+        );
+
+        return $reference;
+    }
+
+    private function findPaymentByReference(?string $reference): ?Payment
+    {
+        if (!$reference) {
+            return null;
+        }
+
+        return Payment::where('reference', $reference)
+            ->orWhereJsonContains('data->previous_references', $reference)
+            ->first();
     }
 
     /**

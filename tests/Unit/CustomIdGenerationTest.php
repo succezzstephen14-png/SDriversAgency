@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Driver;
 use App\Models\Recruitment;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,6 +33,19 @@ class CustomIdGenerationTest extends TestCase
         ]);
 
         $this->assertMatchesRegularExpression('/^DRV-[A-Z0-9]+$/', (string) $driver->id);
+        $this->assertMatchesRegularExpression('/^DRV-APP-[A-Z0-9]{12}$/', $driver->application_id);
+
+        $vehicle = Vehicle::create([
+            'user_id' => $user->id,
+            'make' => 'Toyota',
+            'model' => 'Corolla',
+            'year' => 2024,
+            'license_plate' => '2301-GR1',
+            'vehicle_type' => 'car',
+        ]);
+
+        $this->assertMatchesRegularExpression('/^VEH-APP-[A-Z0-9]{12}$/', $vehicle->application_id);
+        $this->assertNotSame($driver->application_id, $vehicle->application_id);
 
         $recruitment = Recruitment::create([
             'user_id' => $user->id,

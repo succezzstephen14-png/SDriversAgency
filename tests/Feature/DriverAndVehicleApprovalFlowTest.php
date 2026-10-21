@@ -98,6 +98,27 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
         ]);
 
         $this->actingAs($user)
+            ->get(route('drivers.profile'))
+            ->assertOk()
+            ->assertSee($driver->application_id);
+
+        $this->actingAs($user)
+            ->get(route('vehicles.pending-vehicles'))
+            ->assertOk()
+            ->assertSee($vehicle->application_id);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->get(route('admin.pending-drivers'))
+            ->assertOk()
+            ->assertSee($driver->application_id);
+
+        $this->actingAs($admin)
+            ->get(route('admin.pending-vehicles'))
+            ->assertOk()
+            ->assertSee($vehicle->application_id);
+
+        $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Waiting for approval')
@@ -105,7 +126,6 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
             ->assertSee('Toyota Corolla')
             ->assertSee('Your vehicle is waiting for admin approval.');
 
-        $admin = User::factory()->create(['role' => 'admin']);
         $this->actingAs($admin)
             ->post(route('admin.drivers.approve', $driver))
             ->assertRedirect();

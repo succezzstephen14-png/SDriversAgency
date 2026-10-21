@@ -163,6 +163,10 @@
                         </div>
                         <div class="vehicle-card-body">
                             <div class="vehicle-info-row">
+                                <strong>Application ID:</strong>
+                                <span class="value">{{ $vehicle->application_id }}</span>
+                            </div>
+                            <div class="vehicle-info-row">
                                 <strong>Owner:</strong>
                                 <span class="value">{{ $vehicle->user->name }}</span>
                             </div>

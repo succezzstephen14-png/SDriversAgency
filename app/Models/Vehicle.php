@@ -2,14 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasApplicationId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Vehicle extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApplicationId;
+
+    protected function getApplicationIdPrefix(): string
+    {
+        return 'VEH-APP';
+    }
 
     protected $fillable = [
+        'application_id',
         'user_id',
         'make',
         'model',

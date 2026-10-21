@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAlphanumericId;
+use App\Models\Concerns\HasApplicationId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class Driver extends Model
 {
-    use HasFactory, HasAlphanumericId;
+    use HasFactory, HasAlphanumericId, HasApplicationId;
 
     public const VETTING_CHECKS = [
         'application_form' => 'Completed driver application form',
@@ -36,7 +37,13 @@ class Driver extends Model
         return 'DRV';
     }
 
+    protected function getApplicationIdPrefix(): string
+    {
+        return 'DRV-APP';
+    }
+
     protected $fillable = [
+        'application_id',
         'user_id',
         'dob',
         'license_number',
