@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Models\ServiceRequest;
 use App\Models\Driver;
 use App\Models\Vehicle;
 use App\Models\Recruitment;
@@ -23,6 +24,21 @@ class PaymentController extends Controller
         if ($request->isMethod('GET') && empty($request->all())) {
             return redirect()->route('drivers.create')
                 ->with('info', 'Please fill out the form to proceed with payment.');
+        }
+
+        if (Auth::user()->driver) {
+            return redirect()->route('drivers.profile')
+                ->with('info', 'You already have a driver profile.');
+        }
+
+        $existingPending = Payment::where('user_id', Auth::id())
+            ->where('type', 'driver')
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingPending) {
+            return redirect()->route('payment.success', ['reference' => $existingPending->reference])
+                ->with('info', 'You already have a pending driver payment. Please complete it before submitting another profile.');
         }
 
         $validated = $request->validate([
@@ -67,18 +83,6 @@ class PaymentController extends Controller
             'second_relationship' => 'required|in:family,employer,friend,colleague',
         ]);
 
-        // Check for existing pending payments with the same license number
-        $existingPending = Payment::where('user_id', Auth::id())
-            ->where('type', 'driver')
-            ->where('status', 'pending')
-            ->whereJsonContains('data->license_number', $validated['license_number'])
-            ->first();
-
-        if ($existingPending) {
-            return redirect()->route('payment.success', ['reference' => $existingPending->reference])
-                ->with('info', 'You already have a pending payment for driver registration. Please complete your payment.');
-        }
-
         // Handle file uploads
         $fileFields = [
             'profile_picture',
@@ -118,25 +122,6 @@ class PaymentController extends Controller
             return redirect()->route('vehicles.create')
                 ->with('info', 'Please fill out the form to proceed with payment.');
         }
-
-        // Debug incoming files and inputs to help diagnose upload/validation issues
-        try {
-            $fileSummary = collect($request->allFiles())->map(function ($f) {
-                if (is_array($f)) {
-                    return collect($f)->map(fn($i) => $i->getClientOriginalName())->toArray();
-                }
-                return $f->getClientOriginalName();
-            })->toArray();
-        } catch (\Throwable $e) {
-            $fileSummary = ['error' => $e->getMessage()];
-        }
-
-        \Log::info('Initiating vehicle payment', [
-            'input_count' => count($request->all()),
-            'files_count' => count($request->allFiles()),
-            'files' => $fileSummary,
-            'image_url_input' => $request->input('image_url'),
-        ]);
 
         $validated = $request->validate([
             'make' => 'required|string|max:255',
@@ -216,13 +201,6 @@ class PaymentController extends Controller
         $amount = 20; // GHS 0.20 in pesewas
         $reference = 'VEH-' . strtoupper(Str::random(12));
 
-        \Log::info('Creating vehicle payment', [
-            'reference' => $reference,
-            'amount' => $amount,
-            'user_id' => Auth::id(),
-            'license_plate' => $validated['license_plate']
-        ]);
-
         $payment = Payment::create([
             'user_id' => Auth::id(),
             'reference' => $reference,
@@ -231,8 +209,6 @@ class PaymentController extends Controller
             'data' => $validated,
             'status' => 'pending',
         ]);
-
-        \Log::info('Vehicle payment created successfully', ['payment_id' => $payment->id]);
 
         return view('payments.paystack-form', compact('payment', 'amount'));
     }
@@ -465,6 +441,10 @@ class PaymentController extends Controller
             return redirect()->route('home')->with('error', 'Payment not found.');
         }
 
+        if (!empty($payment->data['service_request_id'])) {
+            abort_unless(Auth::check() && Auth::id() === $payment->user_id, 403);
+        }
+
         if ($payment->status !== 'completed') {
             \Log::info('Verifying payment with Paystack', ['reference' => $reference]);
 
@@ -488,6 +468,15 @@ class PaymentController extends Controller
 
         if ($payment->status === 'completed') {
             $resourceCreated = $this->createResourceFromPayment($payment);
+            if (!empty($payment->data['service_request_id'])) {
+                if ($resourceCreated === false) {
+                    return redirect()->route('service.dashboard')
+                        ->with('error', 'Payment was received but could not be linked to your request. Please contact support.');
+                }
+
+                return redirect()->route('service.dashboard')
+                    ->with('success', 'Payment confirmed. Your service request is now marked as paid.');
+            }
             if ($payment->type === 'driver' && $resourceCreated === false) {
                 return redirect()->route('home')
                     ->with('error', 'Driver registration failed after payment. Please contact support.');
@@ -502,14 +491,18 @@ class PaymentController extends Controller
                     ->with('success', 'Your booking request has been sent. Please check the front page for updates.');
             }
 
-            $routes = [
-                'driver' => 'drivers.profile',
-                'vehicle' => 'vehicles.my-vehicles',
-                'recruitment' => 'recruitments.my-posts',
-            ];
+            if ($payment->type === 'driver') {
+                return redirect()->route('dashboard')
+                    ->with('success', 'Payment confirmed. Your driver profile is waiting for admin approval.');
+            }
 
-            return redirect()->route($routes[$payment->type] ?? 'home')
-                ->with('success', ucfirst($payment->type) . ' created successfully! Pending approval.');
+            if ($payment->type === 'vehicle') {
+                return redirect()->route('dashboard')
+                    ->with('success', 'Payment confirmed. Your vehicle is waiting for admin approval.');
+            }
+
+            return redirect()->route('recruitments.my-posts')
+                ->with('success', 'Recruitment created successfully! Pending approval.');
         }
 
         return redirect()->route('home')->with('error', 'Payment not completed.');
@@ -535,6 +528,37 @@ class PaymentController extends Controller
      */
     private function createResourceFromPayment($payment)
     {
+        if (!empty($payment->data['service_request_id'])) {
+            $serviceRequest = ServiceRequest::whereKey($payment->data['service_request_id'])
+                ->where('user_id', $payment->user_id)
+                ->first();
+
+            if (!$serviceRequest || $serviceRequest->payment_reference !== $payment->reference) {
+                \Log::error('Service request payment does not match the request owner or reference.', [
+                    'payment_id' => $payment->id,
+                    'service_request_id' => $payment->data['service_request_id'],
+                ]);
+
+                return false;
+            }
+
+            if ($serviceRequest->status === 'awaiting_payment') {
+                $serviceRequest->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ]);
+                \App\Models\Notification::create([
+                    'user_id' => $serviceRequest->user_id,
+                    'title' => 'Service request payment received',
+                    'message' => "Payment for service request #{$serviceRequest->id} was confirmed.",
+                    'type' => 'service_request',
+                    'status' => 'unread',
+                ]);
+            }
+
+            return in_array($serviceRequest->status, ['paid', 'completed'], true);
+        }
+
         if ($payment->type === 'driver' && empty($payment->data['booking_date'])) {
             if (!Driver::where('payment_reference', $payment->reference)->exists()) {
                 // Sanitize payment data - convert arrays to strings or null
@@ -562,29 +586,30 @@ class PaymentController extends Controller
                         'reference' => $payment->reference,
                         'type' => $payment->type,
                         'missing_fields' => array_values($missingFields),
-                        'payment_data' => $payment->data,
                     ]);
 
                     return false;
                 }
 
-                $driver = Driver::create(array_merge($sanitizedData, [
+                $driver = Driver::firstOrCreate(['user_id' => $payment->user_id], array_merge($sanitizedData, [
                     'user_id' => $payment->user_id,
-                    'status' => 'available',
+                    'status' => 'unavailable',
                     'approval_status' => 'pending',
                     'payment_status' => 'paid',
                     'payment_reference' => $payment->reference,
                 ]));
 
-                $user = $driver->user;
-                $this->notifyAdmins(
-                    'New driver registration pending approval',
-                    "A new driver registration has been submitted and is pending your approval.\n\n" .
-                    "Driver: {$user->name}\n" .
-                    "License Number: {$driver->license_number}\n" .
-                    "Email: {$user->email}\n" .
-                    "Status: Pending approval."
-                );
+                if ($driver->wasRecentlyCreated) {
+                    $user = $driver->user;
+                    $this->notifyAdmins(
+                        'New driver registration pending approval',
+                        "A new driver registration has been submitted and is pending your approval.\n\n" .
+                        "Driver: {$user->name}\n" .
+                        "License Number: {$driver->license_number}\n" .
+                        "Email: {$user->email}\n" .
+                        "Status: Pending approval."
+                    );
+                }
             }
         }
 

@@ -10,6 +10,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\ServiceCustomerController;
+use App\Http\Controllers\ServiceRequestAdminController;
 
 Route::domain(config('admin.domain'))->group(function () {
     Route::get('/admin/login', [AuthController::class, 'adminLoginForm'])->name('admin.login');
@@ -33,6 +35,12 @@ Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/register', [AuthController::class, 'registerForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+Route::get('/request-a-driver', [ServiceCustomerController::class, 'registerForm'])->defaults('requestType', 'driver')->name('service.register.driver');
+Route::get('/request-a-vehicle', [ServiceCustomerController::class, 'registerForm'])->defaults('requestType', 'vehicle')->name('service.register.vehicle');
+Route::get('/request-services/register', [ServiceCustomerController::class, 'registerForm'])->name('service.register');
+Route::post('/request-services/register', [ServiceCustomerController::class, 'register'])->name('service.register.post');
+Route::get('/request-services/login', [AuthController::class, 'serviceCustomerLoginForm'])->name('service.login');
+Route::post('/request-services/login', [AuthController::class, 'serviceCustomerLogin'])->name('service.login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/email/verify', [AuthController::class, 'verificationNotice'])
     ->middleware('auth')
@@ -49,6 +57,19 @@ Route::get('/forgot-password', [AuthController::class, 'forgotPasswordForm'])->n
 Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
 Route::get('/reset-password/{token}', [AuthController::class, 'resetPasswordForm'])->name('password.reset');
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+
+Route::middleware(['auth', 'verified', 'service_customer'])->prefix('service-dashboard')->name('service.')->group(function () {
+    Route::get('/', [ServiceCustomerController::class, 'dashboard'])->name('dashboard');
+    Route::get('/requests', [ServiceCustomerController::class, 'requests'])->name('requests.index');
+    Route::get('/requests/create/{type}', [ServiceCustomerController::class, 'createRequest'])
+        ->whereIn('type', ['driver', 'vehicle'])
+        ->name('requests.create');
+    Route::post('/requests', [ServiceCustomerController::class, 'storeRequest'])->name('requests.store');
+    Route::post('/requests/{serviceRequest}/pay', [ServiceCustomerController::class, 'pay'])
+        ->whereNumber('serviceRequest')
+        ->name('requests.pay');
+    Route::get('/account', [ServiceCustomerController::class, 'profile'])->name('profile');
+});
 
 // Social Authentication Routes
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('auth.google');
@@ -108,7 +129,7 @@ Route::get('/payment/cancelled', [PaymentController::class, 'paymentCancelled'])
 Route::post('/payment/webhook', [PaymentController::class, 'handlePaystackCallback'])->name('payment.webhook');
 
 // Authenticated user routes
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'not_service_customer'])->group(function () {
     // User vehicles
     Route::get('/my-vehicles', [VehicleController::class, 'myVehicles'])->name('vehicles.my-vehicles');
     Route::get('/my-vehicles/pending', [VehicleController::class, 'myPendingVehicles'])->name('vehicles.pending-vehicles');
@@ -177,6 +198,9 @@ Route::middleware('dashboard.only')->get('/recruitments/{recruitment}', [Recruit
 
 // Admin routes
 Route::domain(config('admin.domain'))->middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/service-requests', [ServiceRequestAdminController::class, 'index'])->name('service-requests.index');
+    Route::get('/service-requests/{serviceRequest}', [ServiceRequestAdminController::class, 'show'])->whereNumber('serviceRequest')->name('service-requests.show');
+    Route::put('/service-requests/{serviceRequest}', [ServiceRequestAdminController::class, 'review'])->whereNumber('serviceRequest')->name('service-requests.review');
     // Recruitment request review (approve/reject guest-submitted requests)
     Route::post('/recruitment-requests/{request}/approve', [\App\Http\Controllers\AdminController::class, 'approveRecruitmentRequest'])->name('recruitment-requests.approve');
     Route::post('/recruitment-requests/{request}/reject', [\App\Http\Controllers\AdminController::class, 'rejectRecruitmentRequest'])->name('recruitment-requests.reject');

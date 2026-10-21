@@ -26,7 +26,11 @@
                         <p class="mb-1"><strong>Email:</strong> {{ Auth::check() ? Auth::user()->email : ($payment->data['guest_email'] ?? 'N/A') }}</p>
                         <p class="mb-1"><strong>Reference:</strong> {{ $payment->reference }}</p>
 
-                        @if(isset($payment->data['booking_type']))
+                        @if(isset($payment->data['service_request_id']) && isset($serviceRequest))
+                            <p class="mb-1"><strong>Request:</strong> #{{ $serviceRequest->id }} · {{ ucfirst($serviceRequest->request_type) }}</p>
+                            <p class="mb-1"><strong>Service:</strong> {{ $serviceRequest->service_label }}</p>
+                            <p class="mb-1"><strong>Location:</strong> {{ $serviceRequest->location }}</p>
+                        @elseif(isset($payment->data['booking_type']))
                             <p class="mb-1"><strong>Booking Type:</strong> {{ ucfirst($payment->data['booking_type']) }}</p>
                             <p class="mb-1"><strong>Date:</strong> {{ $payment->data['booking_date'] }}</p>
                             <p class="mb-1"><strong>Time:</strong> {{ $payment->data['start_time'] }} - {{ $payment->data['end_time'] }}</p>
@@ -65,7 +69,7 @@
                             </div>
                         @endif
 
-                        <a href="{{ url()->previous() }}" class="btn btn-secondary btn-lg w-100 mt-2">
+                        <a href="{{ isset($serviceRequest) ? route('service.requests.index') : url()->previous() }}" class="btn btn-secondary btn-lg w-100 mt-2">
                             <i class="fas fa-arrow-left me-2"></i>Cancel
                         </a>
                     </form>

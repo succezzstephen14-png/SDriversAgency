@@ -563,23 +563,29 @@
         </form>
         </div>
 
-        <div class="divider">
-            <span>Or continue with</span>
-        </div>
+        @if(($loginType ?? 'user') !== 'service_customer')
+            <div class="divider">
+                <span>Or continue with</span>
+            </div>
 
-        <div class="social-buttons">
-            <a href="{{ route('auth.google') }}" class="btn-social">
-                <i class="fab fa-google" style="color: #ea4335;"></i>
-                Continue with Google
-            </a>
-            <a href="{{ route('auth.apple') }}" class="btn-social">
-                <i class="fab fa-apple" style="color: #000;"></i>
-                Continue with Apple
-            </a>
-        </div>
+            <div class="social-buttons">
+                <a href="{{ route('auth.google') }}" class="btn-social">
+                    <i class="fab fa-google" style="color: #ea4335;"></i>
+                    Continue with Google
+                </a>
+                <a href="{{ route('auth.apple') }}" class="btn-social">
+                    <i class="fab fa-apple" style="color: #000;"></i>
+                    Continue with Apple
+                </a>
+            </div>
+        @endif
 
         <div class="auth-footer">
-            Don't have an account? <a href="{{ route('register') }}">Sign up</a>
+            @if(($loginType ?? 'user') === 'service_customer')
+                New to service requests? <a href="{{ route('service.register') }}">Create an account</a>
+            @else
+                Don't have an account? <a href="{{ route('register') }}">Sign up</a>
+            @endif
         </div>
         </div>
     </div>

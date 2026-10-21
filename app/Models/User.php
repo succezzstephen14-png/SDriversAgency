@@ -157,6 +157,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $this->hasMany(Payment::class);
     }
 
+    public function serviceRequests()
+    {
+        return $this->hasMany(ServiceRequest::class);
+    }
+
+    public function isServiceCustomer(): bool
+    {
+        return $this->role === 'service_customer';
+    }
+
     /**
      * Get all alert notifications for the user.
      */

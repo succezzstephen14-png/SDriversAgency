@@ -912,6 +912,7 @@ class AdminController extends Controller
     {
         $driver->update([
             'approval_status' => 'approved',
+            'status' => 'available',
             'approved_at' => now(),
         ]);
 

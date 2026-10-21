@@ -60,8 +60,6 @@ class VehicleController extends Controller
      */
     public function store(Request $request)
     {
-        \Log::info('Vehicle store request', ['data' => $request->all()]);
-
         $validated = $request->validate([
             // Basic Information
             'make' => 'required|string|max:255',

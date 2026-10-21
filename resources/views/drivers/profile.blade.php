@@ -33,7 +33,11 @@
                                 </div>
                             </div>
                             <div class="text-end">
-                                @if($driver->status === 'available')
+                                @if($driver->approval_status === 'pending')
+                                    <span class="badge bg-warning text-dark fs-6">Waiting for approval</span>
+                                @elseif($driver->approval_status === 'rejected')
+                                    <span class="badge bg-danger fs-6">Rejected</span>
+                                @elseif($driver->status === 'available')
                                     <span class="badge bg-success fs-6">Active</span>
                                 @elseif($driver->status === 'unavailable')
                                     <span class="badge bg-warning fs-6">Unavailable</span>
@@ -44,6 +48,16 @@
                         </div>
                     </div>
                 </div>
+                @if($driver->approval_status === 'pending')
+                    <div class="alert alert-info mb-4">
+                        Your payment is confirmed. Your driver profile is waiting for admin approval and will be active after it is approved.
+                    </div>
+                @elseif($driver->approval_status === 'rejected')
+                    <div class="alert alert-danger mb-4">
+                        <strong>Your driver profile was rejected.</strong>
+                        {{ $driver->rejection_reason ?? 'Please contact support for more information.' }}
+                    </div>
+                @endif
 
                 <!-- Personal Information -->
                 <div class="card mb-4">

@@ -88,6 +88,7 @@ class DriverVisibilityTest extends TestCase
         $this->assertDatabaseHas('drivers', [
             'id' => $driver->id,
             'approval_status' => 'approved',
+            'status' => 'available',
         ]);
 
         $this->get(route('drivers.show', $driver))->assertNotFound();

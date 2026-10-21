@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'domain' => env('ADMIN_DOMAIN', 'succezzdriversagency.com'),
+    'domain' => env('ADMIN_DOMAIN', 'admin.succezzdriversagency.com'),
     'system' => [
         'email' => env('SYSTEM_ADMIN_EMAIL', 'succezzdriversagency@gmail.com'),
         'password' => env('SYSTEM_ADMIN_PASSWORD'),

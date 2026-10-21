@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
             // Use CmsAdmin middleware which checks the User::isCmsAdmin() helper
             'cms_admin' => \App\Http\Middleware\CmsAdmin::class,
             'dashboard.only' => \App\Http\Middleware\RedirectRegularUsersFromPublicSite::class,
+            'service_customer' => \App\Http\Middleware\EnsureServiceCustomer::class,
+            'not_service_customer' => \App\Http\Middleware\EnsureNotServiceCustomer::class,
         ]);
         $middleware->redirectGuestsTo(
             fn (\Illuminate\Http\Request $request) => $request->getHost() === config('admin.domain')

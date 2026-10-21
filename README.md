@@ -105,6 +105,13 @@ php artisan serve
 5. **Post Jobs** at `/recruitments/create`
 6. Public website pages redirect signed-in regular users to their dashboard. Log out to browse public listings.
 
+### For Service Customers
+1. Start at `/request-a-driver` or `/request-a-vehicle` and register with your full name, email, and password.
+2. Verify your email to open the separate service dashboard at `/service-dashboard`.
+3. Submit one request per driver or vehicle needed, then track status and administrator messages in **My requests**.
+4. An administrator assigns an approved resource and sends a quote; payment is available from the request only after assignment.
+5. Update your name, phone, or address for administrator review, and change your password under **Account settings**.
+
 ### For Admin Users
 1. **Login** at `https://succezzdriversagency.com/admin/login`
 2. **Access** the admin dashboard at `https://succezzdriversagency.com/admin/dashboard`
@@ -247,6 +254,7 @@ php artisan optimize             # Optimize
 ### 4. Admin Dashboard
 - User management with role assignment
 - Review and approve or reject user account, driver, and vehicle profile changes
+- Review service-customer requests, assign approved resources, send quotes, and notify customers
 - Generate one-time password reset links for users
 - Vehicle moderation tools
 - Driver profile moderation

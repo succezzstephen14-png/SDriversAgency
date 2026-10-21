@@ -38,6 +38,17 @@ class AuthController extends Controller
         ]);
     }
 
+    public function serviceCustomerLoginForm()
+    {
+        return view('auth.login', [
+            'loginType' => 'service_customer',
+            'title' => 'Service Customer Login',
+            'subtitle' => 'Sign in to request drivers and vehicles and track your service requests.',
+            'actionRoute' => route('service.login.post'),
+            'showAlternateLinks' => false,
+        ]);
+    }
+
     public function cmsLoginForm()
     {
         return view('auth.login', [
@@ -59,6 +70,14 @@ class AuthController extends Controller
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors([
                 'email' => 'The provided credentials do not match our records.',
+            ])->onlyInput('email');
+        }
+
+        if ($loginType === 'service_customer' && !Auth::user()->isServiceCustomer()) {
+            Auth::logout();
+
+            return back()->withErrors([
+                'email' => 'These credentials are not for a service-request account.',
             ])->onlyInput('email');
         }
 
@@ -105,6 +124,14 @@ class AuthController extends Controller
             return redirect()->intended(route('admin.dashboard'));
         }
 
+        if (Auth::user()->isServiceCustomer()) {
+            if (!Auth::user()->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
+
+            return redirect()->intended(route('service.dashboard'));
+        }
+
         if (!Auth::user()->hasVerifiedEmail()) {
             return redirect()->route('verification.notice');
         }
@@ -120,6 +147,11 @@ class AuthController extends Controller
     public function cmsLogin(Request $request)
     {
         return $this->login($request, 'cms');
+    }
+
+    public function serviceCustomerLogin(Request $request)
+    {
+        return $this->login($request, 'service_customer');
     }
 
     public function registerForm()
@@ -153,7 +185,7 @@ class AuthController extends Controller
     public function verificationNotice()
     {
         if (Auth::user()->hasVerifiedEmail()) {
-            return redirect()->route('dashboard');
+            return redirect()->route(Auth::user()->isServiceCustomer() ? 'service.dashboard' : 'dashboard');
         }
 
         return view('auth.verify-email');
@@ -162,18 +194,19 @@ class AuthController extends Controller
     public function verifyEmail(EmailVerificationRequest $request)
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route('dashboard');
+            return redirect()->route($request->user()->isServiceCustomer() ? 'service.dashboard' : 'dashboard');
         }
 
         $request->fulfill();
 
-        return redirect()->route('dashboard')->with('status', 'email-verified');
+        return redirect()->route($request->user()->isServiceCustomer() ? 'service.dashboard' : 'dashboard')
+            ->with('status', 'email-verified');
     }
 
     public function resendVerificationEmail(Request $request)
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->route('dashboard');
+            return redirect()->route($request->user()->isServiceCustomer() ? 'service.dashboard' : 'dashboard');
         }
 
         $request->user()->sendEmailVerificationNotification();
@@ -193,6 +226,10 @@ class AuthController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
+        if ($user->isServiceCustomer()) {
+            return redirect()->route('service.dashboard');
+        }
+
         $user->syncOnboardingStatus();
 
         // Redirect to admin dashboard only for admin/super_admin roles
@@ -200,8 +237,8 @@ class AuthController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        $vehicles = $user->vehicles()->latest()->take(3)->get();
-        $featuredVehicle = $vehicles->first();
+        $driverProfile = $user->driver;
+        $dashboardVehicles = $user->vehicles()->latest()->take(5)->get();
         $recentBookings = $user->bookings()
             ->where('booking_type', '!=', 'recruitment')
             ->with(['driver.user', 'vehicle'])
@@ -212,13 +249,13 @@ class AuthController extends Controller
         $unreadNotifications = $user->alerts()->where('status', 'unread')->count();
 
         $stats = [
-            'vehicles' => $user->vehicles()->count(),
-            'drivers' => $user->driver ? 1 : 0,
+            'vehicles' => $user->vehicles()->where('approval_status', 'approved')->count(),
+            'drivers' => $user->driver()->where('approval_status', 'approved')->count(),
             'recruitments' => $user->recruitments()->count(),
             'bookings' => $user->bookings()->where('booking_type', '!=', 'recruitment')->count(),
         ];
 
-        return view('dashboard', compact('user', 'stats', 'vehicles', 'featuredVehicle', 'recentBookings', 'notifications', 'unreadNotifications'));
+        return view('dashboard', compact('user', 'stats', 'driverProfile', 'dashboardVehicles', 'recentBookings', 'notifications', 'unreadNotifications'));
     }
 
     public function notifications()
@@ -244,7 +281,7 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         if ($user->pending_profile_changes) {
-            return redirect()->route('profile.edit')
+            return redirect()->route($user->isServiceCustomer() ? 'service.profile' : 'profile.edit')
                 ->withErrors(['profile' => 'Your profile changes are awaiting admin review. You can submit another update after they are reviewed.']);
         }
 
@@ -261,14 +298,14 @@ class AuthController extends Controller
         );
 
         if ($changes === []) {
-            return redirect()->route('profile.edit')
+            return redirect()->route($user->isServiceCustomer() ? 'service.profile' : 'profile.edit')
                 ->with('success', 'No profile changes were submitted.');
         }
 
         $user->pending_profile_changes = $changes;
         $user->save();
 
-        return redirect()->route('profile')
+        return redirect()->route($user->isServiceCustomer() ? 'service.profile' : 'profile')
             ->with('success', 'Your profile changes have been submitted for admin review. Your current approved details remain active until approval.');
     }
 
@@ -283,7 +320,7 @@ class AuthController extends Controller
         $user->password = $validated['password'];
         $user->save();
 
-        return redirect()->route('profile')
+        return redirect()->route($user->isServiceCustomer() ? 'service.profile' : 'profile')
             ->with('success', 'Password updated successfully.');
     }
 
@@ -303,6 +340,10 @@ class AuthController extends Controller
     public function onboarding()
     {
         $user = Auth::user();
+        if ($user->isServiceCustomer()) {
+            return redirect()->route('service.dashboard');
+        }
+
         $user->syncOnboardingStatus();
 
         return redirect()->route('dashboard');

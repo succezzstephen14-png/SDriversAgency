@@ -691,6 +691,10 @@
                         <span class="badge">{{ $stats['pending_bookings'] }}</span>
                     @endif
                 </a>
+                <a href="{{ route('admin.service-requests.index') }}" class="{{ request()->routeIs('admin.service-requests.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-clipboard-check"></i></span>
+                    Service Requests
+                </a>
                 <a href="{{ route('admin.bookings', ['guest' => 1]) }}" class="{{ request()->routeIs('admin.bookings*') && request('guest') ? 'active' : '' }}">
                     <span class="icon"><i class="fas fa-user-secret"></i></span>
                     Guest Bookings

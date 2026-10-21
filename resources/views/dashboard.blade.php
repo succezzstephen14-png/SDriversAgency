@@ -325,13 +325,87 @@
             <div class="stat-card">
                 <div class="stat-label"><i class="fas fa-user-tie me-2"></i>Drivers</div>
                 <div class="stat-value">{{ $stats['drivers'] ?? 0 }}</div>
-                <div class="stat-note">Registered drivers</div>
+                <div class="stat-note">Approved driver profiles</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label"><i class="fas fa-car-side me-2"></i>Vehicles</div>
                 <div class="stat-value">{{ $stats['vehicles'] ?? 0 }}</div>
-                <div class="stat-note">Registered vehicles</div>
+                <div class="stat-note">Approved vehicles</div>
             </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid full mb-4">
+        <div class="dashboard-card">
+            <div class="section-header">
+                <div>
+                    <h3><i class="fas fa-clipboard-check me-2" style="color: var(--dashboard-primary);"></i>My submissions</h3>
+                    <p>Track driver and vehicle applications awaiting review.</p>
+                </div>
+            </div>
+
+            @if($driverProfile)
+                <div class="recent-item mb-3">
+                    <div class="meta">
+                        <div>
+                            <h5>Driver profile</h5>
+                            <span>Submitted {{ $driverProfile->created_at?->format('M d, Y') ?? 'recently' }}</span>
+                        </div>
+                        <span class="badge bg-{{ $driverProfile->approval_status === 'approved' ? 'success' : ($driverProfile->approval_status === 'rejected' ? 'danger' : 'warning text-dark') }}">
+                            {{ $driverProfile->approval_status === 'approved' ? 'Approved' : ($driverProfile->approval_status === 'rejected' ? 'Rejected' : 'Waiting for approval') }}
+                        </span>
+                    </div>
+                    @if($driverProfile->approval_status === 'pending')
+                        <p class="text-muted mb-0">Your payment is confirmed. Your driver profile will be active after admin approval.</p>
+                    @elseif($driverProfile->approval_status === 'rejected')
+                        <p class="text-muted mb-0">Reason: {{ $driverProfile->rejection_reason ?? 'No reason provided' }}</p>
+                    @else
+                        <p class="text-muted mb-0">Your driver profile has been approved.</p>
+                    @endif
+                    <a href="{{ route('drivers.profile') }}" class="btn btn-soft btn-sm mt-2">View driver profile</a>
+                </div>
+            @else
+                <div class="recent-item mb-3">
+                    <div class="meta">
+                        <div>
+                            <h5>Driver profile</h5>
+                            <span>No profile submitted</span>
+                        </div>
+                    </div>
+                    <a href="{{ route('drivers.create') }}" class="btn btn-soft btn-sm mt-2">Create driver profile</a>
+                </div>
+            @endif
+
+            @forelse($dashboardVehicles as $vehicle)
+                <div class="recent-item mb-3">
+                    <div class="meta">
+                        <div>
+                            <h5>{{ $vehicle->year }} {{ $vehicle->make }} {{ $vehicle->model }}</h5>
+                            <span>Submitted {{ $vehicle->created_at?->format('M d, Y') ?? 'recently' }}</span>
+                        </div>
+                        <span class="badge bg-{{ $vehicle->approval_status === 'approved' ? 'success' : ($vehicle->approval_status === 'rejected' ? 'danger' : 'warning text-dark') }}">
+                            {{ $vehicle->approval_status === 'approved' ? 'Approved' : ($vehicle->approval_status === 'rejected' ? 'Rejected' : 'Waiting for approval') }}
+                        </span>
+                    </div>
+                    @if($vehicle->approval_status === 'pending')
+                        <p class="text-muted mb-0">Your vehicle is waiting for admin approval.</p>
+                    @elseif($vehicle->approval_status === 'rejected')
+                        <p class="text-muted mb-0">Reason: {{ $vehicle->rejection_reason ?? 'No reason provided' }}</p>
+                    @else
+                        <p class="text-muted mb-0">Your vehicle has been approved.</p>
+                    @endif
+                </div>
+            @empty
+                <div class="recent-item">
+                    <div class="meta">
+                        <div>
+                            <h5>Vehicles</h5>
+                            <span>No vehicles submitted</span>
+                        </div>
+                    </div>
+                    <a href="{{ route('vehicles.create') }}" class="btn btn-soft btn-sm mt-2">Add a vehicle</a>
+                </div>
+            @endforelse
         </div>
     </div>
 
