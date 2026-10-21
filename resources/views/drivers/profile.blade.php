@@ -30,7 +30,7 @@
                                 <div>
                                     <h3 class="mb-1">{{ $driver->user?->name ?? 'Driver Profile' }}</h3>
                                     <p class="mb-0 small">License: {{ $driver->license_number }} • Class {{ $driver->license_class }}</p>
-                                    <p class="mb-0 small">Application ID: <code>{{ $driver->application_id }}</code></p>
+                                    <p class="mb-0 small">Application ID: <code>{{ $driver->application_id ?: $driver->id }}</code></p>
                                 </div>
                             </div>
                             <div class="text-end">
@@ -88,7 +88,7 @@
                                     <dd class="col-sm-7">{{ $driver->created_at?->format('F j, Y') }}</dd>
 
                                     <dt class="col-sm-5">Application ID</dt>
-                                    <dd class="col-sm-7"><code>{{ $driver->application_id }}</code></dd>
+                                    <dd class="col-sm-7"><code>{{ $driver->application_id ?: $driver->id }}</code></dd>
                                 </dl>
                             </div>
                         </div>

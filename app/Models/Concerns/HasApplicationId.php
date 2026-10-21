@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 trait HasApplicationId
@@ -10,7 +11,7 @@ trait HasApplicationId
     protected static function bootHasApplicationId(): void
     {
         static::creating(function (Model $model): void {
-            if (empty($model->application_id)) {
+            if (empty($model->application_id) && Schema::hasColumn($model->getTable(), 'application_id')) {
                 $model->application_id = $model->generateApplicationId();
             }
         });

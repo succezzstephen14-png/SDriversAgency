@@ -177,7 +177,7 @@
                         <div class="driver-card-body">
                             <div class="driver-info-row">
                                 <strong>Application ID:</strong>
-                                <span class="value">{{ $driver->application_id }}</span>
+                                <span class="value">{{ $driver->application_id ?: $driver->id }}</span>
                             </div>
                             <div class="driver-info-row">
                                 <strong>Email:</strong>

@@ -26,6 +26,16 @@ class PaymentController extends Controller
                 ->with('info', 'Please fill out the form to proceed with payment.');
         }
 
+        $recovered = $this->recoverCompletedDriverRegistrationForUser(Auth::user());
+        if ($recovered === true) {
+            return redirect()->route('drivers.profile')
+                ->with('info', 'You already have a driver profile.');
+        }
+        if ($recovered === false) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Your driver payment was completed, but registration is still being processed. Please contact support before submitting again.');
+        }
+
         if (Auth::user()->driver) {
             return redirect()->route('drivers.profile')
                 ->with('info', 'You already have a driver profile.');
@@ -546,6 +556,44 @@ class PaymentController extends Controller
         }
 
         return redirect()->route('home')->with('info', 'Payment cancelled.');
+    }
+
+    public function recoverCompletedDriverRegistrationForUser(\App\Models\User $user): ?bool
+    {
+        $hasCompletedPayment = Payment::where('user_id', $user->id)
+            ->where('type', 'driver')
+            ->where('status', 'completed')
+            ->get()
+            ->contains(fn (Payment $payment) => empty($payment->data['booking_date']));
+
+        if (! $hasCompletedPayment) {
+            return null;
+        }
+
+        $this->recoverCompletedDriverRegistrations($user->id);
+
+        return Driver::where('user_id', $user->id)->exists();
+    }
+
+    public function recoverCompletedDriverRegistrations(?string $userId = null): void
+    {
+        $payments = Payment::where('type', 'driver')
+            ->where('status', 'completed')
+            ->when($userId, fn ($query) => $query->where('user_id', $userId))
+            ->orderBy('created_at')
+            ->get();
+
+        foreach ($payments as $payment) {
+            if (! empty($payment->data['booking_date'])) {
+                continue;
+            }
+
+            if (Driver::where('user_id', $payment->user_id)->exists()) {
+                continue;
+            }
+
+            $this->createResourceFromPayment($payment);
+        }
     }
 
     private function renewPaymentReference(Payment $payment, string $prefix): void

@@ -505,6 +505,8 @@ class AdminController extends Controller
      */
     public function dashboard()
     {
+        app(PaymentController::class)->recoverCompletedDriverRegistrations();
+
         // Enhanced statistics
         $stats = [
             'total_users' => User::count(),
@@ -639,7 +641,7 @@ class AdminController extends Controller
         $revenueByMonth = $revenueMonths->map(fn($label) => $revenueCounts[$label] ?? 0)->all();
 
         // Recent items
-        $recent_vehicles = Vehicle::with('user')->latest()->take(5)->get();
+        $recent_vehicles = Vehicle::approved()->with('user')->latest()->take(5)->get();
         $recent_drivers = Driver::with('user')->latest()->take(5)->get();
 
         return view(
@@ -754,15 +756,11 @@ class AdminController extends Controller
                 'insurance_document' => 'insurance_document',
                 'road_worthy' => 'roadworthiness_certificate',
                 'roadworthiness_certificate' => 'roadworthiness_certificate',
-                'road_worthy_certificate' => 'road_worthy_certificate',
-                'ownership' => 'ownership_document',
-                'ownership_document' => 'ownership_document',
+                'road_worthy' => 'roadworthiness_certificate',
                 'images' => 'image_url',
                 'image_url' => 'image_url',
             ],
             'recruitment' => [
-                'company_registration' => 'company_registration',
-                'tax_clearance' => 'tax_clearance',
                 'job_brief' => 'job_brief',
                 'offer_document' => 'offer_document',
             ],
@@ -810,6 +808,8 @@ class AdminController extends Controller
      */
     public function pendingDrivers()
     {
+        app(PaymentController::class)->recoverCompletedDriverRegistrations();
+
         $drivers = Driver::where('approval_status', 'pending')->with('user')->paginate(15);
         return view('admin.pending-drivers', compact('drivers'));
     }
@@ -1339,7 +1339,9 @@ class AdminController extends Controller
                         'passport' => $driver->passport_file,
                         'guarantor_id' => $driver->guarantor_ghana_card_file,
                         'second_guarantor_id' => $driver->second_guarantor_ghana_card_file,
-                        'profile_picture' => $driver->profile_picture,
+                        'profile_picture' => $driver->profile_picture ?: $driver->profile_image,
+                        'guarantor_passport_file' => $driver->guarantor_passport_file,
+                        'second_guarantor_passport_file' => $driver->second_guarantor_passport_file,
                     ],
                     'details' => [
                         'license_number' => $driver->license_number,
@@ -1367,8 +1369,7 @@ class AdminController extends Controller
                     'documents' => [
                         'registration' => $vehicle->registration_document,
                         'insurance' => $vehicle->insurance_document,
-                        'road_worthy' => $vehicle->road_worthy_certificate,
-                        'ownership' => $vehicle->ownership_document,
+                        'road_worthy' => $vehicle->roadworthiness_certificate,
                         'images' => $vehicle->imagePaths(),
                     ],
                     'details' => [
@@ -1395,8 +1396,8 @@ class AdminController extends Controller
                     'role' => 'Employer',
                     'submitted_at' => $recruitment->created_at,
                     'documents' => [
-                        'company_registration' => $recruitment->company_registration,
-                        'tax_clearance' => $recruitment->tax_clearance,
+                        'job_brief' => $recruitment->job_brief,
+                        'offer_document' => $recruitment->offer_document,
                     ],
                     'details' => [
                         'company' => $recruitment->company_name,
@@ -1663,6 +1664,8 @@ class AdminController extends Controller
      */
     public function drivers()
     {
+        app(PaymentController::class)->recoverCompletedDriverRegistrations();
+
         $drivers = Driver::with('user')->paginate(15);
         return view('admin.drivers', compact('drivers'));
     }

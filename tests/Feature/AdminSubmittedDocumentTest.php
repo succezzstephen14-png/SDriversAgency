@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Booking;
 use App\Models\Driver;
+use App\Models\Recruitment;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -86,8 +88,16 @@ class AdminSubmittedDocumentTest extends TestCase
 
         $admin = User::factory()->create(['role' => 'admin']);
         $applicant = User::factory()->create();
+        $recruitment = Recruitment::create([
+            'user_id' => User::factory()->create()->id,
+            'title' => 'Driver position',
+            'description' => 'Position description',
+            'location' => 'Accra',
+            'approval_status' => 'approved',
+        ]);
         $booking = Booking::create([
             'user_id' => $applicant->id,
+            'recruitment_id' => $recruitment->id,
             'booking_type' => 'recruitment',
             'booking_date' => now(),
             'application_documents' => ['applications/cv.pdf'],
@@ -105,6 +115,98 @@ class AdminSubmittedDocumentTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Disposition', 'inline; filename=cv.pdf');
+
+        $this->actingAs($admin)
+            ->get(route('admin.recruitment-review'))
+            ->assertOk()
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'booking',
+                'id' => $booking->id,
+                'field' => 'application_documents',
+                'index' => 0,
+            ]), false);
+    }
+
+    public function test_admin_review_documents_stream_driver_vehicle_and_recruitment_uploads(): void
+    {
+        Storage::fake('public');
+        foreach ([
+            'documents/guarantor-passport.jpg',
+            'documents/second-guarantor-passport.jpg',
+            'documents/registration.pdf',
+            'documents/insurance.pdf',
+            'documents/roadworthiness.pdf',
+            'documents/job-brief.pdf',
+            'documents/offer.pdf',
+        ] as $path) {
+            Storage::disk('public')->put($path, 'submitted document');
+        }
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $driver = Driver::factory()->create([
+            'guarantor_passport_file' => 'documents/guarantor-passport.jpg',
+            'second_guarantor_passport_file' => 'documents/second-guarantor-passport.jpg',
+        ]);
+        $vehicle = Vehicle::factory()->create([
+            'approval_status' => 'pending',
+            'registration_document' => 'documents/registration.pdf',
+            'insurance_document' => 'documents/insurance.pdf',
+            'roadworthiness_certificate' => 'documents/roadworthiness.pdf',
+        ]);
+        $recruitment = Recruitment::create([
+            'user_id' => User::factory()->create()->id,
+            'title' => 'Driver position',
+            'description' => 'Position description',
+            'location' => 'Accra',
+            'job_brief' => 'documents/job-brief.pdf',
+            'offer_document' => 'documents/offer.pdf',
+            'approval_status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.recruitment-review'))
+            ->assertOk()
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'driver',
+                'id' => $driver->id,
+                'field' => 'guarantor_passport_file',
+            ]), false)
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'driver',
+                'id' => $driver->id,
+                'field' => 'second_guarantor_passport_file',
+            ]), false)
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'vehicle',
+                'id' => $vehicle->id,
+                'field' => 'road_worthy',
+            ]), false)
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'recruitment',
+                'id' => $recruitment->id,
+                'field' => 'job_brief',
+            ]), false)
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'recruitment',
+                'id' => $recruitment->id,
+                'field' => 'offer_document',
+            ]), false);
+
+        foreach ([
+            [$driver, 'driver', 'guarantor_passport_file'],
+            [$driver, 'driver', 'second_guarantor_passport_file'],
+            [$vehicle, 'vehicle', 'registration_document'],
+            [$vehicle, 'vehicle', 'insurance_document'],
+            [$vehicle, 'vehicle', 'roadworthiness_certificate'],
+            [$recruitment, 'recruitment', 'job_brief'],
+            [$recruitment, 'recruitment', 'offer_document'],
+        ] as [$record, $type, $field]) {
+            $this->get(route('admin.documents.show', [
+                'type' => $type,
+                'id' => $record->id,
+                'field' => $field,
+            ]))->assertOk();
+        }
     }
 
     public function test_non_admin_cannot_view_submitted_documents(): void

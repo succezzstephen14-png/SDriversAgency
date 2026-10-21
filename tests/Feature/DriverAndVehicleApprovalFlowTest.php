@@ -147,6 +147,38 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
             ->assertSee('Your vehicle has been approved.');
     }
 
+    public function test_old_approved_vehicles_remain_visible_on_user_and_admin_dashboards(): void
+    {
+        $user = User::factory()->create();
+        $approvedVehicle = Vehicle::factory()->create([
+            'user_id' => $user->id,
+            'make' => 'VisibleApprovedMake',
+            'model' => 'VisibleApprovedModel',
+            'approval_status' => 'approved',
+            'created_at' => now()->subDays(10),
+        ]);
+
+        foreach (range(1, 6) as $index) {
+            Vehicle::factory()->create([
+                'user_id' => $user->id,
+                'approval_status' => 'pending',
+                'created_at' => now()->addSeconds($index),
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('VisibleApprovedMake VisibleApprovedModel')
+            ->assertSee(route('vehicles.my-vehicles'));
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('VisibleApprovedMake VisibleApprovedModel');
+    }
+
     public function test_completed_driver_payment_webhook_retry_creates_pending_profile_and_blocks_resubmission(): void
     {
         $user = User::factory()->create();
@@ -213,5 +245,102 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
 
         $this->assertDatabaseCount('drivers', 1);
         $this->assertDatabaseCount('payments', 1);
+    }
+
+    public function test_user_and_admin_dashboard_recover_completed_driver_payment_without_a_webhook(): void
+    {
+        Mail::fake();
+        $user = User::factory()->create();
+        $payment = Payment::create([
+            'user_id' => $user->id,
+            'reference' => 'DRV-DASHBOARD-RECOVERY',
+            'amount' => 20,
+            'type' => 'driver',
+            'status' => 'completed',
+            'data' => $this->completedDriverPaymentData(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Waiting for approval')
+            ->assertSee('Your payment is confirmed.');
+
+        $driver = Driver::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame('pending', $driver->approval_status);
+        $this->assertSame('paid', $driver->payment_status);
+        $this->assertSame($payment->reference, $driver->payment_reference);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)
+            ->get(route('admin.pending-drivers'))
+            ->assertOk()
+            ->assertSee($driver->license_number);
+
+        $this->actingAs($user)
+            ->get(route('drivers.create'))
+            ->assertRedirect(route('drivers.profile'));
+
+        $this->actingAs($user)
+            ->post(route('drivers.store'))
+            ->assertRedirect(route('drivers.profile'));
+
+        $this->assertDatabaseCount('drivers', 1);
+        $this->assertDatabaseCount('payments', 1);
+    }
+
+    public function test_completed_driver_payment_blocks_new_submission_even_if_profile_recovery_fails(): void
+    {
+        $user = User::factory()->create();
+        Payment::create([
+            'user_id' => $user->id,
+            'reference' => 'DRV-INCOMPLETE-COMPLETED',
+            'amount' => 20,
+            'type' => 'driver',
+            'status' => 'completed',
+            'data' => ['license_number' => 'DL-INCOMPLETE'],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('drivers.create'))
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('error');
+
+        $this->actingAs($user)
+            ->post(route('drivers.store'))
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('drivers', 0);
+        $this->assertDatabaseCount('payments', 1);
+    }
+
+    private function completedDriverPaymentData(): array
+    {
+        return [
+            'license_number' => 'DL-DASHBOARD-RECOVERY',
+            'license_expiry' => now()->addYear()->toDateString(),
+            'license_class' => 'B',
+            'experience_years' => 5,
+            'emergency_person' => 'Emergency Contact',
+            'emergency_phone' => '0200000000',
+            'bio' => 'Experienced driver.',
+            'profile_picture' => 'documents/profile.jpg',
+            'license_file' => 'documents/license.pdf',
+            'ghana_card_no' => 'GHA-123456789-0',
+            'ghana_card_file' => 'documents/ghana-card.pdf',
+            'guarantor' => 'First Guarantor',
+            'guarantor_phone' => '0200000001',
+            'g_ghana_card_no' => 'GHA-123456780-1',
+            'guarantor_ghana_card_file' => 'documents/guarantor-id.pdf',
+            'guarantor_passport_file' => 'documents/guarantor.jpg',
+            'relationship' => 'family',
+            'second_guarantor' => 'Second Guarantor',
+            'second_guarantor_phone' => '0200000002',
+            'second_g_ghana_card_no' => 'GHA-123456781-2',
+            'second_guarantor_ghana_card_file' => 'documents/second-guarantor-id.pdf',
+            'second_guarantor_passport_file' => 'documents/second-guarantor.jpg',
+            'second_relationship' => 'friend',
+        ];
     }
 }

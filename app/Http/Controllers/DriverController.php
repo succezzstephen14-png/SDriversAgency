@@ -33,6 +33,16 @@ class DriverController extends Controller
      */
     public function create()
     {
+        $recovered = app(PaymentController::class)->recoverCompletedDriverRegistrationForUser(Auth::user());
+        if ($recovered === true) {
+            return redirect()->route('drivers.profile')
+                ->with('info', 'You already have a driver profile.');
+        }
+        if ($recovered === false) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Your driver payment was completed, but registration is still being processed. Please contact support before submitting again.');
+        }
+
         if (Auth::user()->driver) {
             return redirect()->route('drivers.profile')
                 ->with('info', 'You already have a driver profile.');
@@ -45,6 +55,16 @@ class DriverController extends Controller
      */
     public function store(Request $request)
     {
+        $recovered = app(PaymentController::class)->recoverCompletedDriverRegistrationForUser(Auth::user());
+        if ($recovered === true) {
+            return redirect()->route('drivers.profile')
+                ->with('info', 'You already have a driver profile.');
+        }
+        if ($recovered === false) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Your driver payment was completed, but registration is still being processed. Please contact support before submitting again.');
+        }
+
         if (Auth::user()->driver) {
             return redirect()->route('drivers.profile')
                 ->with('info', 'You already have a driver profile.');

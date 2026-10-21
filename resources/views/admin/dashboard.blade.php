@@ -880,8 +880,11 @@
     <div class="dashboard-grid">
         <div class="dashboard-card" style="grid-column: span 6;">
             <div class="recent-section">
-                <h3><i class="fas fa-car"></i> Recent Vehicles</h3>
-                <p style="color: #718096; margin-top: -1rem; margin-bottom: 1.5rem; font-size: 0.9rem;">Latest vehicle registrations in your fleet</p>
+                <h3><i class="fas fa-car"></i> Recently Approved Vehicles</h3>
+                <p style="color: #718096; margin-top: -1rem; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                    Recently approved vehicles in your fleet.
+                    <a href="{{ route('admin.vehicles.index') }}">Manage all vehicles</a>
+                </p>
                 <div class="recent-list">
                     @forelse($recent_vehicles ?? collect() as $vehicle)
                     <div class="recent-item">
@@ -903,9 +906,9 @@
                             <i class="fas fa-info-circle"></i>
                         </div>
                         <div class="recent-content">
-                            <strong>No recent vehicles</strong>
+                            <strong>No approved vehicles yet</strong>
                             <div class="recent-meta">
-                                <span>New vehicle registrations will appear here</span>
+                                <span>Approved vehicle registrations will appear here</span>
                             </div>
                         </div>
                     </div>

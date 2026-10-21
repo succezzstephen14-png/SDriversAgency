@@ -265,8 +265,19 @@ class AuthController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
+        app(PaymentController::class)->recoverCompletedDriverRegistrations($user->id);
+
         $driverProfile = $user->driver;
-        $dashboardVehicles = $user->vehicles()->latest()->take(5)->get();
+        $dashboardVehicles = $user->vehicles()
+            ->whereIn('approval_status', ['pending', 'rejected'])
+            ->latest()
+            ->take(5)
+            ->get();
+        $approvedVehicles = $user->vehicles()
+            ->where('approval_status', 'approved')
+            ->latest()
+            ->take(5)
+            ->get();
         $recentBookings = $user->bookings()
             ->where('booking_type', '!=', 'recruitment')
             ->with(['driver.user', 'vehicle'])
@@ -283,7 +294,7 @@ class AuthController extends Controller
             'bookings' => $user->bookings()->where('booking_type', '!=', 'recruitment')->count(),
         ];
 
-        return view('dashboard', compact('user', 'stats', 'driverProfile', 'dashboardVehicles', 'recentBookings', 'notifications', 'unreadNotifications'));
+        return view('dashboard', compact('user', 'stats', 'driverProfile', 'dashboardVehicles', 'approvedVehicles', 'recentBookings', 'notifications', 'unreadNotifications'));
     }
 
     public function notifications()

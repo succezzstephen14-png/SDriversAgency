@@ -340,7 +340,7 @@
             <div class="section-header">
                 <div>
                     <h3><i class="fas fa-clipboard-check me-2" style="color: var(--dashboard-primary);"></i>My submissions</h3>
-                    <p>Track driver and vehicle applications awaiting review.</p>
+                    <p>Track your driver and vehicle applications, including approved vehicles.</p>
                 </div>
             </div>
 
@@ -396,16 +396,42 @@
                     @endif
                 </div>
             @empty
+                <div class="recent-item mb-3">
+                    <div class="meta">
+                        <div>
+                            <h5>Pending or rejected vehicles</h5>
+                            <span>No vehicles awaiting review or requiring changes</span>
+                        </div>
+                    </div>
+                </div>
+            @endforelse
+
+            @forelse($approvedVehicles as $vehicle)
+                <div class="recent-item mb-3">
+                    <div class="meta">
+                        <div>
+                            <h5>{{ $vehicle->year }} {{ $vehicle->make }} {{ $vehicle->model }}</h5>
+                            <span>Approved vehicle · Submitted {{ $vehicle->created_at?->format('M d, Y') ?? 'recently' }}</span>
+                        </div>
+                        <span class="badge bg-success">Approved</span>
+                    </div>
+                    <p class="text-muted mb-0">Your vehicle has been approved. You can manage it from your approved vehicles list.</p>
+                </div>
+            @empty
                 <div class="recent-item">
                     <div class="meta">
                         <div>
-                            <h5>Vehicles</h5>
-                            <span>No vehicles submitted</span>
+                            <h5>Approved vehicles</h5>
+                            <span>You do not have any approved vehicles yet</span>
                         </div>
                     </div>
-                    <a href="{{ route('vehicles.create') }}" class="btn btn-soft btn-sm mt-2">Add a vehicle</a>
                 </div>
             @endforelse
+
+            @if($dashboardVehicles->isEmpty() && $approvedVehicles->isEmpty())
+                <a href="{{ route('vehicles.create') }}" class="btn btn-soft btn-sm mb-3">Add a vehicle</a>
+            @endif
+            <a href="{{ route('vehicles.my-vehicles') }}" class="btn btn-soft btn-sm">View all approved vehicles</a>
         </div>
     </div>
 
