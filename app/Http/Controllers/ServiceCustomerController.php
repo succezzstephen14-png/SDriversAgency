@@ -80,8 +80,16 @@ class ServiceCustomerController extends Controller
             ->with(['assignedDriver.user', 'assignedVehicle', 'assignmentActivities.user'])
             ->latest()
             ->paginate(10);
+        $statusCounts = Auth::user()->serviceRequests()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $typeCounts = Auth::user()->serviceRequests()
+            ->selectRaw('request_type, COUNT(*) as total')
+            ->groupBy('request_type')
+            ->pluck('total', 'request_type');
 
-        return view('service.requests', compact('requests'));
+        return view('service.requests', compact('requests', 'statusCounts', 'typeCounts'));
     }
 
     public function createRequest(string $type)

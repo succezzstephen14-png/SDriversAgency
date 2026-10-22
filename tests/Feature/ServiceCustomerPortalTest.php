@@ -109,6 +109,40 @@ class ServiceCustomerPortalTest extends TestCase
         ]);
     }
 
+    public function test_customer_request_dashboard_shows_request_type_summaries_and_card_details(): void
+    {
+        $user = User::factory()->create(['role' => 'service_customer']);
+        ServiceRequest::create([
+            'user_id' => $user->id,
+            'request_type' => 'driver',
+            'service_type' => 'personal_driver',
+            'location' => 'Accra',
+            'status' => 'pending',
+        ]);
+        ServiceRequest::create([
+            'user_id' => $user->id,
+            'request_type' => 'vehicle',
+            'service_type' => 'work_and_pay',
+            'vehicle_type' => 'van',
+            'location' => 'Kumasi',
+            'status' => 'awaiting_payment',
+            'quoted_amount' => 12550,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('service.requests.index'))
+            ->assertOk()
+            ->assertSee('Track your driver and vehicle requests')
+            ->assertSee('All requests')
+            ->assertSee('Driver requests')
+            ->assertSee('Vehicle requests')
+            ->assertSee('Awaiting review')
+            ->assertSee('Driver request')
+            ->assertSee('Vehicle request')
+            ->assertSee('Awaiting payment')
+            ->assertSee('GHS 125.50');
+    }
+
     public function test_admin_assignment_sends_dashboard_notification_and_quote(): void
     {
         Mail::fake();
