@@ -57,7 +57,7 @@ class DefaultAdminAccountsTest extends TestCase
         $admin = User::where('email', 'succezzdriversagency@gmail.com')->firstOrFail();
         $admin->update(['password' => Hash::make('Changed@2026!')]);
 
-        $this->post('/admin/login', [
+        $this->post(route('admin.login.post'), [
             'email' => 'succezzdriversagency@gmail.com',
             'password' => 'incorrect',
         ])->assertSessionHasErrors('email');

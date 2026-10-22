@@ -17,7 +17,11 @@ class GoogleOAuthTest extends TestCase
 
     public function test_google_sign_in_starts_on_the_same_host_as_its_callback(): void
     {
-        config(['services.google.redirect' => 'http://127.0.0.1:8000/auth/google/callback']);
+        config([
+            'services.google.client_id' => 'test-client-id',
+            'services.google.client_secret' => 'test-client-secret',
+            'services.google.redirect' => 'http://127.0.0.1:8000/auth/google/callback',
+        ]);
 
         Socialite::shouldReceive('driver')->never();
 

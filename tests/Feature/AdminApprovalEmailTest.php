@@ -36,7 +36,8 @@ class AdminApprovalEmailTest extends TestCase
             ->once()
             ->withArgs(function (string $text, callable $callback) use ($driverOwner) {
                 $this->assertStringContainsString("Hello {$driverOwner->name},", $text);
-                $this->assertStringContainsString('approved and is now visible', $text);
+                $this->assertStringContainsString('available for admin review', $text);
+                $this->assertStringContainsString('will not be shown on the public website', $text);
 
                 $mailMessage = Mockery::mock();
                 $mailMessage->shouldReceive('to')->once()->with($driverOwner->email)->andReturnSelf();

@@ -995,39 +995,32 @@ class PaymentController extends Controller
             return false;
         }
 
-        $curl = curl_init();
+        try {
+            $response = Http::withToken($secretKey)
+                ->acceptJson()
+                ->timeout(15)
+                ->get('https://api.paystack.co/transaction/verify/' . rawurlencode($reference));
+        } catch (ConnectionException $exception) {
+            \Log::error('Paystack API connection error', [
+                'exception' => $exception::class,
+                'reference' => $reference,
+            ]);
 
-        curl_setopt_array($curl, [
-            CURLOPT_URL => "https://api.paystack.co/transaction/verify/" . rawurlencode($reference),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Bearer " . $secretKey,
-                "Content-Type: application/json",
-            ],
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
-        ]);
-
-        $response = curl_exec($curl);
-        $error = curl_error($curl);
-        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-
-        curl_close($curl);
-
-        if ($error) {
-            \Log::error('Paystack API curl error', ['error' => $error, 'reference' => $reference]);
             return false;
         }
 
-        if ($httpCode !== 200) {
-            \Log::error('Paystack API HTTP error', ['http_code' => $httpCode, 'reference' => $reference]);
+        if (!$response->successful()) {
+            \Log::error('Paystack API HTTP error', [
+                'http_code' => $response->status(),
+                'reference' => $reference,
+            ]);
+
             return false;
         }
 
-        $result = json_decode($response, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            \Log::error('Paystack API JSON decode error', ['response' => $response, 'reference' => $reference]);
+        $result = $response->json();
+        if (!is_array($result)) {
+            \Log::error('Paystack API returned an invalid JSON response', ['reference' => $reference]);
             return false;
         }
 

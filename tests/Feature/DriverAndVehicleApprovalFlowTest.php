@@ -7,8 +7,12 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DriverAndVehicleApprovalFlowTest extends TestCase
@@ -145,6 +149,134 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
             ->assertSee('Approved')
             ->assertSee('Your driver profile has been approved.')
             ->assertSee('Your vehicle has been approved.');
+    }
+
+    public function test_submitted_driver_and_vehicle_are_created_and_listed_for_admin_after_verified_payment(): void
+    {
+        Storage::fake('public');
+        Mail::fake();
+        config(['services.paystack.secret_key' => 'sk_test_example']);
+        Http::fake(function (Request $request) {
+            $reference = basename(parse_url($request->url(), PHP_URL_PATH));
+
+            return Http::response([
+                'status' => true,
+                'data' => [
+                    'status' => 'success',
+                    'amount' => 20,
+                    'reference' => $reference,
+                ],
+            ]);
+        });
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('drivers.store'), [
+                'emergency_person' => 'Driver Emergency Contact',
+                'emergency_phone' => '0200000100',
+                'bio' => 'Test driver application.',
+                'profile_picture' => UploadedFile::fake()->createWithContent(
+                    'driver.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+                ),
+                'license_number' => 'TEST-DL-123456',
+                'license_expiry' => now()->addYear()->toDateString(),
+                'license_class' => 'B',
+                'experience_years' => 5,
+                'license_file' => UploadedFile::fake()->create('license.pdf', 10, 'application/pdf'),
+                'ghana_card_no' => 'GHA-123456789-0',
+                'ghana_card_file' => UploadedFile::fake()->create('ghana-card.pdf', 10, 'application/pdf'),
+                'guarantor' => 'First Test Guarantor',
+                'guarantor_phone' => '0200000101',
+                'g_ghana_card_no' => 'GHA-123456780-1',
+                'guarantor_ghana_card_file' => UploadedFile::fake()->create('guarantor-id.pdf', 10, 'application/pdf'),
+                'guarantor_passport_file' => UploadedFile::fake()->createWithContent(
+                    'guarantor.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+                ),
+                'relationship' => 'family',
+                'second_guarantor' => 'Second Test Guarantor',
+                'second_guarantor_phone' => '0200000102',
+                'second_g_ghana_card_no' => 'GHA-123456781-2',
+                'second_guarantor_ghana_card_file' => UploadedFile::fake()->create('second-guarantor-id.pdf', 10, 'application/pdf'),
+                'second_guarantor_passport_file' => UploadedFile::fake()->createWithContent(
+                    'second-guarantor.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+                ),
+                'second_relationship' => 'friend',
+            ])
+            ->assertOk()
+            ->assertViewIs('payments.paystack-form');
+
+        $driverPayment = Payment::where('user_id', $user->id)->where('type', 'driver')->firstOrFail();
+        $this->actingAs($user)
+            ->get(route('payment.success', ['reference' => $driverPayment->reference]))
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('success', 'Payment confirmed. Your driver profile is waiting for admin approval.');
+
+        $driver = Driver::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame('completed', $driverPayment->fresh()->status);
+        $this->assertSame('pending', $driver->approval_status);
+        $this->assertSame('paid', $driver->payment_status);
+
+        $this->actingAs($user)
+            ->post(route('vehicles.store'), [
+                'make' => 'Test Motors',
+                'model' => 'Approval Sedan',
+                'year' => now()->year,
+                'vehicle_type' => 'car',
+                'color' => 'Blue',
+                'license_plate' => '2301-GR1',
+                'condition' => 'good',
+                'registration_date' => '2020-01-01',
+                'registration_expiry' => now()->addYear()->toDateString(),
+                'insurance_expiry' => now()->addYear()->toDateString(),
+                'inspection_expiry' => now()->addYear()->toDateString(),
+                'registration_document' => UploadedFile::fake()->create('registration.pdf', 10, 'application/pdf'),
+                'insurance_document' => UploadedFile::fake()->create('insurance.pdf', 10, 'application/pdf'),
+                'roadworthiness_certificate' => UploadedFile::fake()->create('roadworthiness.pdf', 10, 'application/pdf'),
+                'image_url' => [UploadedFile::fake()->createWithContent(
+                    'vehicle.png',
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+                )],
+            ])
+            ->assertOk()
+            ->assertViewIs('payments.paystack-form');
+
+        $vehiclePayment = Payment::where('user_id', $user->id)->where('type', 'vehicle')->firstOrFail();
+        $this->actingAs($user)
+            ->get(route('payment.success', ['reference' => $vehiclePayment->reference]))
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('success', 'Payment confirmed. Your vehicle is waiting for admin approval.');
+
+        $vehicle = Vehicle::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame('completed', $vehiclePayment->fresh()->status);
+        $this->assertSame('pending', $vehicle->approval_status);
+        $this->assertSame('completed', $vehicle->payment_status);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $adminDashboard = $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk();
+        $this->assertSame(1, $adminDashboard->viewData('stats')['pending_drivers']);
+        $this->assertSame(1, $adminDashboard->viewData('stats')['pending_vehicles']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.pending-drivers'))
+            ->assertOk()
+            ->assertSee('Pending Driver Approvals')
+            ->assertSee($driver->license_number)
+            ->assertSee('Pending Review');
+        $this->actingAs($admin)
+            ->get(route('admin.pending-vehicles'))
+            ->assertOk()
+            ->assertSee('Pending Vehicle Approvals')
+            ->assertSee($vehicle->license_plate)
+            ->assertSee('Approval Sedan')
+            ->assertSee('Pending Review');
+
+        Http::assertSentCount(2);
     }
 
     public function test_old_approved_vehicles_remain_visible_on_user_and_admin_dashboards(): void

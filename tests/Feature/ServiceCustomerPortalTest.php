@@ -7,7 +7,10 @@ use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
@@ -228,5 +231,106 @@ class ServiceCustomerPortalTest extends TestCase
             'user_id' => $customer->id,
             'title' => 'Service request payment received',
         ]);
+    }
+
+    public function test_driver_and_vehicle_service_requests_can_be_quoted_and_paid_after_paystack_verification(): void
+    {
+        Mail::fake();
+        config(['services.paystack.secret_key' => 'sk_test_example']);
+        Http::fake(function (Request $request) {
+            $reference = basename(parse_url($request->url(), PHP_URL_PATH));
+            $payment = Payment::where('reference', $reference)->firstOrFail();
+
+            return Http::response([
+                'status' => true,
+                'data' => [
+                    'status' => 'success',
+                    'amount' => $payment->amount,
+                    'reference' => $reference,
+                ],
+            ]);
+        });
+
+        $customer = User::factory()->create(['role' => 'service_customer']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $driver = Driver::factory()->create([
+            'approval_status' => 'approved',
+            'status' => 'available',
+        ]);
+        $vehicle = Vehicle::factory()->create([
+            'approval_status' => 'approved',
+            'availability_status' => 'available',
+            'vehicle_type' => 'van',
+        ]);
+
+        $requestDetails = [
+            [
+                'request_type' => 'driver',
+                'service_type' => 'personal_driver',
+                'location' => 'Test Accra Service Area',
+                'assigned_driver_id' => $driver->id,
+                'quoted_amount' => '125.50',
+            ],
+            [
+                'request_type' => 'vehicle',
+                'service_type' => 'work_and_pay',
+                'vehicle_type' => 'van',
+                'location' => 'Test Kumasi Service Area',
+                'assigned_vehicle_id' => $vehicle->id,
+                'quoted_amount' => '200.00',
+            ],
+        ];
+
+        foreach ($requestDetails as $details) {
+            $this->actingAs($customer)
+                ->post(route('service.requests.store'), [
+                    'request_type' => $details['request_type'],
+                    'service_type' => $details['service_type'],
+                    'vehicle_type' => $details['vehicle_type'] ?? null,
+                    'location' => $details['location'],
+                    'details' => 'Test-only service request.',
+                ])
+                ->assertRedirect(route('service.requests.index'));
+
+            $serviceRequest = ServiceRequest::where('user_id', $customer->id)
+                ->where('request_type', $details['request_type'])
+                ->latest('id')
+                ->firstOrFail();
+
+            $this->actingAs($admin)
+                ->put(route('admin.service-requests.review', $serviceRequest), [
+                    'decision' => 'approve',
+                    'assigned_driver_id' => $details['assigned_driver_id'] ?? null,
+                    'assigned_vehicle_id' => $details['assigned_vehicle_id'] ?? null,
+                    'quoted_amount' => $details['quoted_amount'],
+                    'admin_message' => 'TEST ONLY: Assigned for your requested dates.',
+                ])
+                ->assertRedirect(route('admin.service-requests.show', $serviceRequest));
+
+            $serviceRequest->refresh();
+            $this->assertSame('awaiting_payment', $serviceRequest->status);
+            $this->assertSame((int) round((float) $details['quoted_amount'] * 100), $serviceRequest->quoted_amount);
+
+            $this->actingAs($customer)
+                ->post(route('service.requests.pay', $serviceRequest))
+                ->assertOk()
+                ->assertViewIs('payments.paystack-form');
+
+            $payment = Payment::where('reference', $serviceRequest->fresh()->payment_reference)->firstOrFail();
+            $this->actingAs($customer)
+                ->get(route('payment.success', ['reference' => $payment->reference]))
+                ->assertRedirect(route('service.dashboard'))
+                ->assertSessionHas('success', 'Payment confirmed. Your service request is now marked as paid.');
+
+            $this->assertSame('completed', $payment->fresh()->status);
+            $this->assertSame('paid', $serviceRequest->fresh()->status);
+            $this->assertDatabaseHas('notifications', [
+                'user_id' => $customer->id,
+                'title' => 'Service request payment received',
+            ]);
+        }
+
+        $this->assertDatabaseMissing('drivers', ['user_id' => $customer->id]);
+        Http::assertSentCount(2);
     }
 }
