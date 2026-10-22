@@ -60,7 +60,11 @@ class ServiceCustomerController extends Controller
 
     public function dashboard()
     {
-        $requests = Auth::user()->serviceRequests()->latest()->limit(5)->get();
+        $requests = Auth::user()->serviceRequests()
+            ->with(['assignedDriver.user', 'assignedVehicle', 'assignmentActivities.user'])
+            ->latest()
+            ->limit(5)
+            ->get();
         $notifications = Auth::user()->alerts()->limit(5)->get();
         $counts = Auth::user()->serviceRequests()
             ->selectRaw("status, COUNT(*) as total")
@@ -72,7 +76,10 @@ class ServiceCustomerController extends Controller
 
     public function requests()
     {
-        $requests = Auth::user()->serviceRequests()->latest()->paginate(10);
+        $requests = Auth::user()->serviceRequests()
+            ->with(['assignedDriver.user', 'assignedVehicle', 'assignmentActivities.user'])
+            ->latest()
+            ->paginate(10);
 
         return view('service.requests', compact('requests'));
     }

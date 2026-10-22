@@ -94,6 +94,8 @@ class DriverController extends Controller
             'license_expiry' => 'required|date|after:today',
             'license_class' => 'required|in:A,B,C,D,E',
             'license_file' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'police_check_file' => 'required|file|mimes:jpeg,png,jpg,gif,webp,pdf|max:5120',
+            'police_check_consent' => 'required|accepted',
             
             // Experience
             'experience_years' => 'required|integer|min:0|max:60',

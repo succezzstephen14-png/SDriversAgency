@@ -506,6 +506,15 @@ class AdminController extends Controller
     public function dashboard()
     {
         app(PaymentController::class)->recoverCompletedDriverRegistrations();
+        $serviceRequestExpiries = \App\Models\ServiceRequest::query()
+            ->whereIn('status', ['paid', 'completed'])
+            ->whereNotNull('agreement_end_date')
+            ->whereDate('agreement_end_date', '>=', now()->toDateString())
+            ->whereDate('agreement_end_date', '<=', now()->addDays(30)->toDateString())
+            ->with(['user', 'assignedDriver.user', 'assignedVehicle'])
+            ->orderBy('agreement_end_date')
+            ->limit(10)
+            ->get();
 
         // Enhanced statistics
         $stats = [
@@ -655,7 +664,8 @@ class AdminController extends Controller
                 'bookingsByDay',
                 'applicationStatuses',
                 'revenueMonths',
-                'revenueByMonth'
+                'revenueByMonth',
+                'serviceRequestExpiries'
             )
         );
     }
@@ -736,6 +746,8 @@ class AdminController extends Controller
             'driver' => [
                 'license' => 'license_file',
                 'license_file' => 'license_file',
+                'police_check' => 'police_check_file',
+                'police_check_file' => 'police_check_file',
                 'ghana_card' => 'ghana_card_file',
                 'ghana_card_file' => 'ghana_card_file',
                 'passport' => 'passport_file',
@@ -797,7 +809,9 @@ class AdminController extends Controller
             404
         );
 
-        $disk = Storage::disk('public');
+        $disk = $type === 'driver' && $documentFields[$type][$field] === 'police_check_file'
+            ? Storage::disk('local')
+            : Storage::disk('public');
         abort_unless($disk->exists($storedDocument), 404);
 
         return $disk->response($storedDocument, basename($storedDocument), [], 'inline');

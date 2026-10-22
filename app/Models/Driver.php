@@ -48,6 +48,8 @@ class Driver extends Model
         'dob',
         'license_number',
         'license_file',
+        'police_check_file',
+        'police_check_consent_at',
         'license_expiry',
         'license_class',
         'ghana_card_no',
@@ -91,6 +93,7 @@ class Driver extends Model
 
     protected $casts = [
         'license_expiry' => 'date',
+        'police_check_consent_at' => 'datetime',
         'approved_at' => 'datetime',
         'vetting_checks' => 'array',
         'pending_application_changes' => 'array',

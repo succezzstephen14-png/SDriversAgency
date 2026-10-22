@@ -427,11 +427,16 @@
                         </span>
                     </div>
                     
-                    @if($driver->license_file || $driver->ghana_card_file || $driver->passport_file)
+                    @if($driver->license_file || $driver->police_check_file || $driver->ghana_card_file || $driver->passport_file)
                     <div class="driver-documents">
                         @if($driver->license_file)
                             <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'license_file']) }}" target="_blank" class="doc-badge">
                                 <i class="fas fa-file-pdf"></i> License
+                            </a>
+                        @endif
+                        @if($driver->police_check_file)
+                            <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'police_check_file']) }}" target="_blank" class="doc-badge">
+                                <i class="fas fa-shield-alt"></i> Police Background Check
                             </a>
                         @endif
                         @if($driver->ghana_card_file)

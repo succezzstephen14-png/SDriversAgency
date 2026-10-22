@@ -312,6 +312,8 @@ class BookingController extends Controller
             abort(403, 'Unauthorized');
         }
 
+        $booking->load(['user', 'driver.user', 'vehicle', 'assignmentActivities.user']);
+
         return view('bookings.show', compact('booking'));
     }
 
@@ -322,6 +324,7 @@ class BookingController extends Controller
     {
         $bookings = Auth::user()->bookings()
             ->where('booking_type', '!=', 'recruitment')
+            ->with(['driver.user', 'vehicle', 'assignmentActivities.user'])
             ->latest()
             ->paginate(10);
         return view('bookings.my-bookings', compact('bookings'));

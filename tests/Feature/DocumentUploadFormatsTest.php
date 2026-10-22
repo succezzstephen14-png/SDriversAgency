@@ -16,6 +16,7 @@ class DocumentUploadFormatsTest extends TestCase
     public function test_driver_registration_accepts_pdf_identity_and_license_documents(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         $user = User::factory()->create(['role' => 'user']);
 
         $this->actingAs($user)
@@ -32,6 +33,8 @@ class DocumentUploadFormatsTest extends TestCase
                 'license_expiry' => now()->addYears(2)->toDateString(),
                 'license_class' => 'B',
                 'license_file' => UploadedFile::fake()->create('license.pdf', 100, 'application/pdf'),
+                'police_check_file' => UploadedFile::fake()->create('police-check.pdf', 100, 'application/pdf'),
+                'police_check_consent' => '1',
                 'experience_years' => '5',
                 'ghana_card_no' => 'GHA-001122330-1',
                 'ghana_card_file' => UploadedFile::fake()->create('ghana-card.pdf', 100, 'application/pdf'),
@@ -64,7 +67,10 @@ class DocumentUploadFormatsTest extends TestCase
         foreach (['profile_picture', 'license_file', 'ghana_card_file', 'passport_file', 'guarantor_ghana_card_file', 'guarantor_passport_file', 'second_guarantor_ghana_card_file', 'second_guarantor_passport_file'] as $field) {
             Storage::disk('public')->assertExists($payment->data[$field]);
         }
+        Storage::disk('local')->assertExists($payment->data['police_check_file']);
+        Storage::disk('public')->assertMissing($payment->data['police_check_file']);
         $this->assertSame('Experienced, careful driver.', $payment->data['bio']);
+        $this->assertNotEmpty($payment->data['police_check_consent_at']);
     }
 
     public function test_vehicle_registration_accepts_pdf_vehicle_documents(): void
@@ -156,6 +162,8 @@ class DocumentUploadFormatsTest extends TestCase
             ->assertSee('id="bio" name="bio"', false)
             ->assertSee('second_guarantor_ghana_card_file', false)
             ->assertSee('name="license_file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"', false)
+            ->assertSee('name="police_check_file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" required', false)
+            ->assertSee('name="police_check_consent" value="1"', false)
             ->assertSee('name="ghana_card_file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"', false)
             ->assertSee('name="passport_file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"', false);
 
@@ -186,6 +194,15 @@ class DocumentUploadFormatsTest extends TestCase
                 'second_guarantor_phone', 'second_g_ghana_card_no',
                 'second_guarantor_ghana_card_file', 'second_relationship',
             ]);
+    }
+
+    public function test_driver_application_requires_police_check_document_and_consent(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+
+        $this->actingAs($user)
+            ->post(route('drivers.store'), [])
+            ->assertSessionHasErrors(['police_check_file', 'police_check_consent']);
     }
 
     public function test_vehicle_registration_requires_a_valid_vin_and_required_documents_dates_and_image(): void

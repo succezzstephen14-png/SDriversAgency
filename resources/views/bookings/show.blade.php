@@ -120,18 +120,20 @@
                     @if(auth()->user()->isAdmin() && $booking->driver)
                         <div class="card mb-4">
                             <div class="card-header bg-light">
-                                <h6 class="mb-0">Driver Information</h6>
+                                <h6 class="mb-0">Assigned Driver</h6>
                             </div>
                             <div class="card-body">
                                 <dl class="row">
                                     <dt class="col-sm-4">Driver Name</dt>
                                     <dd class="col-sm-8">{{ $booking->driver->user->name }}</dd>
 
-                                    <dt class="col-sm-4">License</dt>
-                                    <dd class="col-sm-8">{{ $booking->driver->license_number }}</dd>
+                                    @if(auth()->user()->isAdmin())
+                                        <dt class="col-sm-4">License</dt>
+                                        <dd class="col-sm-8">{{ $booking->driver->license_number }}</dd>
 
-                                    <dt class="col-sm-4">Experience</dt>
-                                    <dd class="col-sm-8">{{ $booking->driver->experience_years }} years</dd>
+                                        <dt class="col-sm-4">Experience</dt>
+                                        <dd class="col-sm-8">{{ $booking->driver->experience_years }} years</dd>
+                                    @endif
 
                                     <dt class="col-sm-4">Rating</dt>
                                     <dd class="col-sm-8">
@@ -258,4 +260,16 @@
         </div>
     </div>
 </div>
+@include('assignments._timeline', ['activities' => $booking->assignmentActivities, 'audience' => 'customer'])
+@if((string) Auth::id() === (string) $booking->user_id
+    && $booking->driver
+    && $booking->approval_status === 'approved'
+    && $booking->payment_status === 'paid'
+    && $booking->status !== 'cancelled')
+    @include('assignments._customer-report-form', [
+        'assignment' => $booking,
+        'assignmentType' => 'booking',
+        'routeName' => 'assignments.activity',
+    ])
+@endif
 @endsection

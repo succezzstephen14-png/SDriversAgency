@@ -18,13 +18,17 @@ class AdminSubmittedDocumentTest extends TestCase
     public function test_admin_can_view_a_submitted_driver_document_without_a_public_storage_link(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         Storage::disk('public')->put('documents/ghana-card.jpg', 'ghana card image');
+        Storage::disk('local')->put('documents/police-check.pdf', 'police check document');
         Storage::disk('public')->put('documents/guarantor-passport.jpg', 'guarantor passport image');
         Storage::disk('public')->put('documents/second-guarantor-passport.jpg', 'second guarantor passport image');
 
         $admin = User::factory()->create(['role' => 'admin']);
         $driver = Driver::factory()->create([
             'ghana_card_file' => 'documents/ghana-card.jpg',
+            'police_check_file' => 'documents/police-check.pdf',
+            'police_check_consent_at' => now(),
             'guarantor_passport_file' => 'documents/guarantor-passport.jpg',
             'second_guarantor_passport_file' => 'documents/second-guarantor-passport.jpg',
         ]);
@@ -57,12 +61,26 @@ class AdminSubmittedDocumentTest extends TestCase
             ->assertHeader('Content-Disposition', 'inline; filename=second-guarantor-passport.jpg');
 
         $this->actingAs($admin)
+            ->get(route('admin.documents.show', [
+                'type' => 'driver',
+                'id' => $driver->id,
+                'field' => 'police_check_file',
+            ]))
+            ->assertOk()
+            ->assertHeader('Content-Disposition', 'inline; filename=police-check.pdf');
+
+        $this->actingAs($admin)
             ->get(route('admin.drivers.detail', $driver))
             ->assertOk()
             ->assertSee(route('admin.documents.show', [
                 'type' => 'driver',
                 'id' => $driver->id,
                 'field' => 'ghana_card_file',
+            ]))
+            ->assertSee(route('admin.documents.show', [
+                'type' => 'driver',
+                'id' => $driver->id,
+                'field' => 'police_check_file',
             ]))
             ->assertSee(route('admin.documents.show', [
                 'type' => 'driver',

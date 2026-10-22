@@ -621,6 +621,12 @@
                     <span class="icon"><i class="fas fa-calendar-check"></i></span>
                     My Bookings
                 </a>
+                @if(Auth::user()->driver)
+                    <a href="{{ route('driver.assignments.index') }}" class="{{ request()->routeIs('driver.assignments.*') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-route"></i></span>
+                        My Assignments
+                    </a>
+                @endif
                 <a href="{{ route('profile') }}" class="{{ request()->routeIs('profile') ? 'active' : '' }}">
                     <span class="icon"><i class="fas fa-cog"></i></span>
                     Settings

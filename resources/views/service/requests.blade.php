@@ -30,12 +30,24 @@
             @if($serviceRequest->quoted_amount)
                 <p class="mb-1"><strong>Quote:</strong> GHS {{ number_format($serviceRequest->quoted_amount / 100, 2) }}</p>
             @endif
+            @if($serviceRequest->agreement_end_date)
+                <p class="mb-1"><strong>Agreed service end date:</strong> {{ $serviceRequest->agreement_end_date->format('M j, Y') }}</p>
+                <p class="mb-1 small text-muted">You and the agency will be reminded {{ $serviceRequest->expiry_reminder_days }} days before expiry.</p>
+            @endif
             @if($serviceRequest->admin_message)<div class="alert alert-info mt-3 mb-0">{{ $serviceRequest->admin_message }}</div>@endif
             @if($serviceRequest->status === 'awaiting_payment')
                 <form method="POST" action="{{ route('service.requests.pay', $serviceRequest) }}" class="mt-3">
                     @csrf
                     <button type="submit" class="btn btn-success">Pay approved quote</button>
                 </form>
+            @endif
+            @include('assignments._timeline', ['activities' => $serviceRequest->assignmentActivities, 'audience' => 'customer'])
+            @if(in_array($serviceRequest->status, ['paid', 'completed'], true) && $serviceRequest->assignedDriver)
+                @include('assignments._customer-report-form', [
+                    'assignment' => $serviceRequest,
+                    'assignmentType' => 'service-request',
+                    'routeName' => 'service.assignments.activity',
+                ])
             @endif
         </div>
     </div>

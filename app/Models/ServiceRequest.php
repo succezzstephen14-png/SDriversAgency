@@ -39,12 +39,17 @@ class ServiceRequest extends Model
         'payment_reference',
         'reviewed_at',
         'paid_at',
+        'agreement_end_date',
+        'expiry_reminder_days',
+        'expiry_reminder_sent_at',
     ];
 
     protected $casts = [
         'preferred_start_date' => 'date',
         'reviewed_at' => 'datetime',
         'paid_at' => 'datetime',
+        'agreement_end_date' => 'date',
+        'expiry_reminder_sent_at' => 'datetime',
         'quoted_amount' => 'integer',
     ];
 
@@ -62,6 +67,12 @@ class ServiceRequest extends Model
     {
         return $this->belongsTo(Vehicle::class, 'assigned_vehicle_id');
     }
+
+    public function assignmentActivities()
+    {
+        return $this->morphMany(AssignmentActivity::class, 'assignable')->latest();
+    }
+
 
     public function getServiceLabelAttribute(): string
     {

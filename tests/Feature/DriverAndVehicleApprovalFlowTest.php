@@ -154,6 +154,7 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
     public function test_submitted_driver_and_vehicle_are_created_and_listed_for_admin_after_verified_payment(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         Mail::fake();
         config(['services.paystack.secret_key' => 'sk_test_example']);
         Http::fake(function (Request $request) {
@@ -185,6 +186,8 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
                 'license_class' => 'B',
                 'experience_years' => 5,
                 'license_file' => UploadedFile::fake()->create('license.pdf', 10, 'application/pdf'),
+                'police_check_file' => UploadedFile::fake()->create('police-check.pdf', 10, 'application/pdf'),
+                'police_check_consent' => '1',
                 'ghana_card_no' => 'GHA-123456789-0',
                 'ghana_card_file' => UploadedFile::fake()->create('ghana-card.pdf', 10, 'application/pdf'),
                 'guarantor' => 'First Test Guarantor',
@@ -219,6 +222,8 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
         $this->assertSame('completed', $driverPayment->fresh()->status);
         $this->assertSame('pending', $driver->approval_status);
         $this->assertSame('paid', $driver->payment_status);
+        $this->assertNotNull($driver->police_check_consent_at);
+        Storage::disk('local')->assertExists($driver->police_check_file);
 
         $this->actingAs($user)
             ->post(route('vehicles.store'), [
@@ -267,7 +272,14 @@ class DriverAndVehicleApprovalFlowTest extends TestCase
             ->assertOk()
             ->assertSee('Pending Driver Approvals')
             ->assertSee($driver->license_number)
+            ->assertSee('Police Background Check')
             ->assertSee('Pending Review');
+        $this->actingAs($admin)
+            ->get(route('admin.drivers.detail', $driver))
+            ->assertOk()
+            ->assertSee('Police Criminal Background Check')
+            ->assertSee('Police check consent');
+
         $this->actingAs($admin)
             ->get(route('admin.pending-vehicles'))
             ->assertOk()

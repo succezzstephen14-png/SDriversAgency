@@ -695,6 +695,10 @@
                     <span class="icon"><i class="fas fa-clipboard-check"></i></span>
                     Service Requests
                 </a>
+                <a href="{{ route('admin.assignments.index') }}" class="{{ request()->routeIs('admin.assignments.*') ? 'active' : '' }}">
+                    <span class="icon"><i class="fas fa-route"></i></span>
+                    Assignments & Feedback
+                </a>
                 <a href="{{ route('admin.bookings', ['guest' => 1]) }}" class="{{ request()->routeIs('admin.bookings*') && request('guest') ? 'active' : '' }}">
                     <span class="icon"><i class="fas fa-user-secret"></i></span>
                     Guest Bookings

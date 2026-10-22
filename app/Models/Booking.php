@@ -101,6 +101,11 @@ class Booking extends Model
         return $this->hasOne(Payment::class, 'reference', 'payment_reference');
     }
 
+    public function assignmentActivities()
+    {
+        return $this->morphMany(AssignmentActivity::class, 'assignable')->latest();
+    }
+
     /**
      * Scope to get pending bookings for admin approval.
      */

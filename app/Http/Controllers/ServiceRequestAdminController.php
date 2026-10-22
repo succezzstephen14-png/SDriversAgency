@@ -76,6 +76,8 @@ class ServiceRequestAdminController extends Controller
                 ],
                 'quoted_amount' => ['required', 'numeric', 'min:0.01', 'max:1000000'],
                 'admin_message' => ['required', 'string', 'max:2000'],
+                'agreement_end_date' => ['nullable', 'date', 'after_or_equal:today'],
+                'expiry_reminder_days' => ['required_with:agreement_end_date', 'nullable', Rule::in([10, 30])],
             ]);
             $serviceRequest->update([
                 'status' => 'awaiting_payment',
@@ -84,6 +86,11 @@ class ServiceRequestAdminController extends Controller
                 'quoted_amount' => (int) round(((float) $validated['quoted_amount']) * 100),
                 'admin_message' => $validated['admin_message'],
                 'reviewed_at' => now(),
+                'agreement_end_date' => $validated['agreement_end_date'] ?? null,
+                'expiry_reminder_days' => !empty($validated['agreement_end_date'])
+                    ? (int) $validated['expiry_reminder_days']
+                    : null,
+                'expiry_reminder_sent_at' => null,
             ]);
             $noticeTitle = 'Your service request is ready';
             $noticeMessage = "Your request #{$serviceRequest->id} has been assigned and quoted at GHS "
@@ -116,5 +123,29 @@ class ServiceRequestAdminController extends Controller
 
         return redirect()->route('admin.service-requests.show', $serviceRequest)
             ->with('success', 'The request decision was saved and the customer was notified.');
+    }
+
+    public function updateAgreement(Request $request, ServiceRequest $serviceRequest)
+    {
+        abort_unless(in_array($serviceRequest->status, ['awaiting_payment', 'paid', 'completed'], true), 422);
+
+        $validated = $request->validate([
+            'agreement_end_date' => ['nullable', 'date', 'after_or_equal:today'],
+            'expiry_reminder_days' => ['required_with:agreement_end_date', 'nullable', Rule::in([10, 30])],
+        ]);
+
+        $dateChanged = $serviceRequest->agreement_end_date?->toDateString() !== ($validated['agreement_end_date'] ?? null)
+            || (int) $serviceRequest->expiry_reminder_days !== (int) ($validated['expiry_reminder_days'] ?? 0);
+
+        $serviceRequest->update([
+            'agreement_end_date' => $validated['agreement_end_date'] ?? null,
+            'expiry_reminder_days' => !empty($validated['agreement_end_date'])
+                ? (int) $validated['expiry_reminder_days']
+                : null,
+            'expiry_reminder_sent_at' => $dateChanged ? null : $serviceRequest->expiry_reminder_sent_at,
+        ]);
+
+        return redirect()->route('admin.service-requests.show', $serviceRequest)
+            ->with('success', 'The service agreement expiry and reminder schedule were updated.');
     }
 }

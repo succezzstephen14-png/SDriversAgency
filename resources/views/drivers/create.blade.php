@@ -163,6 +163,34 @@
                             </div>
                         </div>
 
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-shield-alt"></i> Police Background Check</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="police_check_file" class="form-label">Police Criminal Background Check * (Required)</label>
+                                        <input type="file" class="form-control @error('police_check_file') is-invalid @enderror"
+                                               id="police_check_file" name="police_check_file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" required>
+                                        <small class="text-muted d-block mt-1">Upload a clear photo or PDF of your police criminal background check (max 5MB).</small>
+                                        @error('police_check_file') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input @error('police_check_consent') is-invalid @enderror"
+                                                   id="police_check_consent" name="police_check_consent" value="1"
+                                                   {{ old('police_check_consent') ? 'checked' : '' }} required>
+                                            <label class="form-check-label" for="police_check_consent">
+                                                I consent to the agency reviewing this document and conducting the police criminal background check as part of driver vetting. *
+                                            </label>
+                                        </div>
+                                        @error('police_check_consent') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Guarantor Information Section -->
                         <div class="card mb-4">
                             <div class="card-header bg-light">

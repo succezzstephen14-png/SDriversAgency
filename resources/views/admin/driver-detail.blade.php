@@ -301,6 +301,7 @@
                     @php
                         $driverDocuments = [
                             'License' => $driver->license_file,
+                            'Police Criminal Background Check' => $driver->police_check_file,
                             'Ghana Card' => $driver->ghana_card_file,
                             'Passport' => $driver->passport_file,
                             'Guarantor 1 ID' => $driver->guarantor_ghana_card_file,
@@ -310,6 +311,7 @@
                         ];
                         $driverDocumentFields = [
                             'License' => 'license_file',
+                            'Police Criminal Background Check' => 'police_check_file',
                             'Ghana Card' => 'ghana_card_file',
                             'Passport' => 'passport_file',
                             'Guarantor 1 ID' => 'guarantor_ghana_card_file',
@@ -327,6 +329,12 @@
                                 </li>
                             @endif
                         @endforeach
+                        @if($driver->police_check_consent_at)
+                            <li>
+                                <span>Police check consent</span>
+                                <strong>Recorded {{ $driver->police_check_consent_at->format('M j, Y g:i A') }}</strong>
+                            </li>
+                        @endif
                         @if($driver->getProfilePictureUrl())
                             <li>
                                 <span>Photo</span>

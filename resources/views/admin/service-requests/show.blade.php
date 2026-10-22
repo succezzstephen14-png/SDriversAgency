@@ -24,6 +24,13 @@
                     @if($serviceRequest->assignedVehicle)<p><strong>Assigned vehicle:</strong> {{ $serviceRequest->assignedVehicle->make }} {{ $serviceRequest->assignedVehicle->model }}</p>@endif
                     @if($serviceRequest->quoted_amount)<p><strong>Quote:</strong> GHS {{ number_format($serviceRequest->quoted_amount / 100, 2) }}</p>@endif
                     @if($serviceRequest->admin_message)<div class="alert alert-info">{{ $serviceRequest->admin_message }}</div>@endif
+                    @if($serviceRequest->agreement_end_date)
+                        <p><strong>Agreement ends:</strong> {{ $serviceRequest->agreement_end_date->format('M j, Y') }}</p>
+                        <p><strong>Expiry reminder:</strong> {{ $serviceRequest->expiry_reminder_days }} days before expiry</p>
+                        @if($serviceRequest->expiry_reminder_sent_at)
+                            <p class="small text-success mb-0">Reminder sent {{ $serviceRequest->expiry_reminder_sent_at->format('M j, Y g:i A') }}</p>
+                        @endif
+                    @endif
                 </div></div>
             </div>
             <div class="col-lg-7">
@@ -57,6 +64,20 @@
                             @endif
                             <div class="mb-3"><label class="form-label" for="quoted_amount">Quote (GHS)</label><input class="form-control" type="number" id="quoted_amount" name="quoted_amount" value="{{ old('quoted_amount') }}" min="0.01" step="0.01" required></div>
                             <div class="mb-3"><label class="form-label" for="approve_message">Message to customer</label><textarea class="form-control" id="approve_message" name="admin_message" rows="3" required>{{ old('decision') === 'approve' ? old('admin_message') : '' }}</textarea></div>
+                            <div class="mb-3">
+                                <label class="form-label" for="agreement_end_date">Agreement end date (optional)</label>
+                                <input class="form-control" type="date" id="agreement_end_date" name="agreement_end_date"
+                                       min="{{ now()->toDateString() }}" value="{{ old('agreement_end_date') }}">
+                                <div class="form-text">Set this from the agreed service term to schedule an expiry reminder.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="expiry_reminder_days">Notify admin and customer</label>
+                                <select class="form-select" id="expiry_reminder_days" name="expiry_reminder_days">
+                                    <option value="">Choose reminder timing</option>
+                                    <option value="30" @selected(old('expiry_reminder_days', '30') === '30')>30 days before expiry</option>
+                                    <option value="10" @selected(old('expiry_reminder_days') === '10')>10 days before expiry</option>
+                                </select>
+                            </div>
                             <button class="btn btn-success" type="submit" @disabled($serviceRequest->request_type === 'driver' ? $drivers->isEmpty() : $vehicles->isEmpty())>Approve and send quote</button>
                             @if(($serviceRequest->request_type === 'driver' ? $drivers : $vehicles)->isEmpty())
                                 <p class="small text-danger mt-2 mb-0">There are no eligible approved, available resources to assign yet.</p>
@@ -77,6 +98,29 @@
                     <div class="card border-0 shadow-sm"><div class="card-body">
                         <h3 class="h5">Review complete</h3>
                         <p>This request is currently <strong>{{ str_replace('_', ' ', $serviceRequest->status) }}</strong>. Decisions cannot be changed here.</p>
+                        @if(in_array($serviceRequest->status, ['awaiting_payment', 'paid', 'completed'], true))
+                            <hr>
+                            <h4 class="h6">Service agreement expiry reminder</h4>
+                            <p class="small text-muted">Set the agreed end date and choose whether admins and the customer should be notified 30 or 10 days in advance.</p>
+                            <form method="POST" action="{{ route('admin.service-requests.agreement.update', $serviceRequest) }}">
+                                @csrf
+                                @method('PUT')
+                                <div class="mb-3">
+                                    <label class="form-label" for="edit_agreement_end_date">Agreement end date</label>
+                                    <input class="form-control" type="date" id="edit_agreement_end_date" name="agreement_end_date"
+                                           min="{{ now()->toDateString() }}" value="{{ old('agreement_end_date', $serviceRequest->agreement_end_date?->toDateString()) }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="edit_expiry_reminder_days">Reminder timing</label>
+                                    <select class="form-select" id="edit_expiry_reminder_days" name="expiry_reminder_days">
+                                        <option value="">No expiry reminder</option>
+                                        <option value="30" @selected((string) old('expiry_reminder_days', $serviceRequest->expiry_reminder_days) === '30')>30 days before expiry</option>
+                                        <option value="10" @selected((string) old('expiry_reminder_days', $serviceRequest->expiry_reminder_days) === '10')>10 days before expiry</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-outline-primary" type="submit">Save agreement</button>
+                            </form>
+                        @endif
                     </div></div>
                 @endif
             </div>

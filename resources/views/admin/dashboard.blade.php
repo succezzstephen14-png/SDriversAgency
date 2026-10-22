@@ -697,6 +697,55 @@
         </div>
     </div>
 
+    @if(isset($serviceRequestExpiries) && $serviceRequestExpiries->isNotEmpty())
+        <div class="dashboard-card mb-4" style="grid-column: span 12; border-left: 5px solid #f59e0b;">
+            <h3><i class="fas fa-hourglass-half text-warning"></i> Service agreements nearing expiry</h3>
+            <p class="text-muted">Review these active service requests and contact customers before the agreed end date.</p>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Request</th>
+                            <th>Customer</th>
+                            <th>Assigned service</th>
+                            <th>Agreement ends</th>
+                            <th>Days left</th>
+                            <th>Reminder</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($serviceRequestExpiries as $serviceRequest)
+                            <tr>
+                                <td>#{{ $serviceRequest->id }} · {{ ucfirst($serviceRequest->request_type) }}</td>
+                                <td>{{ $serviceRequest->user?->name ?? 'Unknown customer' }}</td>
+                                <td>
+                                    @if($serviceRequest->assignedDriver)
+                                        Driver: {{ $serviceRequest->assignedDriver->user?->name ?? 'Assigned' }}
+                                    @elseif($serviceRequest->assignedVehicle)
+                                        Vehicle: {{ $serviceRequest->assignedVehicle->make }} {{ $serviceRequest->assignedVehicle->model }}
+                                    @else
+                                        {{ $serviceRequest->service_label }}
+                                    @endif
+                                </td>
+                                <td>{{ $serviceRequest->agreement_end_date->format('M j, Y') }}</td>
+                                <td>{{ now()->startOfDay()->diffInDays($serviceRequest->agreement_end_date) }}</td>
+                                <td>
+                                    @if($serviceRequest->expiry_reminder_sent_at)
+                                        Sent {{ $serviceRequest->expiry_reminder_sent_at->format('M j, Y') }}
+                                    @else
+                                        {{ $serviceRequest->expiry_reminder_days }} days before expiry
+                                    @endif
+                                </td>
+                                <td><a class="btn btn-sm btn-outline-primary" href="{{ route('admin.service-requests.show', $serviceRequest) }}">Review</a></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
     <!-- Stats Overview -->
     <div class="dashboard-grid">
         <div class="dashboard-card" style="grid-column: span 12;">

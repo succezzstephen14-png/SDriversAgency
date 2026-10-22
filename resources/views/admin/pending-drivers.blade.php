@@ -232,6 +232,9 @@
                                     @if($driver->license_file)
                                         <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'license_file']) }}" target="_blank">📄 License</a>
                                     @endif
+                                    @if($driver->police_check_file)
+                                        <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'police_check_file']) }}" target="_blank">📄 Police Background Check</a>
+                                    @endif
                                     @if($driver->ghana_card_file)
                                         <a href="{{ route('admin.documents.show', ['type' => 'driver', 'id' => $driver->id, 'field' => 'ghana_card_file']) }}" target="_blank">🪪 Ghana Card</a>
                                     @endif

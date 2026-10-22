@@ -68,6 +68,9 @@ Route::middleware(['auth', 'verified', 'service_customer'])->prefix('service-das
     Route::post('/requests/{serviceRequest}/pay', [ServiceCustomerController::class, 'pay'])
         ->whereNumber('serviceRequest')
         ->name('requests.pay');
+    Route::post('/assignments/{type}/{id}/activity', [\App\Http\Controllers\AssignmentController::class, 'storeActivity'])
+        ->where('type', 'booking|service-request')
+        ->name('assignments.activity');
     Route::get('/account', [ServiceCustomerController::class, 'profile'])->name('profile');
 });
 
@@ -171,6 +174,10 @@ Route::middleware(['auth', 'verified', 'not_service_customer'])->group(function 
     Route::get('/bookings/my-bookings', [BookingController::class, 'myBookings'])->name('bookings.my-bookings');
     Route::get('/bookings/applications', [BookingController::class, 'myApplications'])->name('bookings.my-applications');
     Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+    Route::get('/driver/assignments', [\App\Http\Controllers\AssignmentController::class, 'driverIndex'])->name('driver.assignments.index');
+    Route::post('/assignments/{type}/{id}/activity', [\App\Http\Controllers\AssignmentController::class, 'storeActivity'])
+        ->where('type', 'booking|service-request')
+        ->name('assignments.activity');
 
     // Notifications
     Route::post('/notifications/{notification}/read', [AuthController::class, 'markNotificationRead'])->name('notifications.read');
@@ -202,9 +209,14 @@ Route::middleware('dashboard.only')->get('/recruitments/{recruitment}', [Recruit
 
 // Admin routes
 Route::domain(config('admin.domain'))->middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/assignments', [\App\Http\Controllers\AssignmentController::class, 'adminIndex'])->name('assignments.index');
+    Route::post('/assignments/{type}/{id}/activity', [\App\Http\Controllers\AssignmentController::class, 'storeActivity'])
+        ->where('type', 'booking|service-request')
+        ->name('assignments.activity');
     Route::get('/service-requests', [ServiceRequestAdminController::class, 'index'])->name('service-requests.index');
     Route::get('/service-requests/{serviceRequest}', [ServiceRequestAdminController::class, 'show'])->whereNumber('serviceRequest')->name('service-requests.show');
     Route::put('/service-requests/{serviceRequest}', [ServiceRequestAdminController::class, 'review'])->whereNumber('serviceRequest')->name('service-requests.review');
+    Route::put('/service-requests/{serviceRequest}/agreement', [ServiceRequestAdminController::class, 'updateAgreement'])->whereNumber('serviceRequest')->name('service-requests.agreement.update');
     // Recruitment request review (approve/reject guest-submitted requests)
     Route::post('/recruitment-requests/{request}/approve', [\App\Http\Controllers\AdminController::class, 'approveRecruitmentRequest'])->name('recruitment-requests.approve');
     Route::post('/recruitment-requests/{request}/reject', [\App\Http\Controllers\AdminController::class, 'rejectRecruitmentRequest'])->name('recruitment-requests.reject');
