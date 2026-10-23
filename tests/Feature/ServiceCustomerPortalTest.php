@@ -140,7 +140,10 @@ class ServiceCustomerPortalTest extends TestCase
             ->assertSee('Driver request')
             ->assertSee('Vehicle request')
             ->assertSee('Awaiting payment')
-            ->assertSee('GHS 125.50');
+            ->assertSee('GHS 125.50')
+            ->assertSee('Toggle service navigation')
+            ->assertSee('data-bs-target="#serviceNavigation"', false)
+            ->assertSee('aria-controls="serviceNavigation"', false);
     }
 
     public function test_admin_assignment_sends_dashboard_notification_and_quote(): void

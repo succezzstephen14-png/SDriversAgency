@@ -11,38 +11,56 @@
         body { margin: 0; background: #f1f5f9; color: #1e293b; font-family: system-ui, sans-serif; }
         .service-shell { min-height: 100vh; }
         .service-sidebar { position: fixed; inset: 0 auto 0 0; width: 250px; padding: 1.5rem 1rem; color: #fff; background: #0f172a; z-index: 10; }
+        .service-sidebar-header { display: flex; justify-content: space-between; align-items: center; }
         .service-brand { font-weight: 800; font-size: 1.05rem; padding: .5rem .75rem 1.5rem; }
+        .service-menu-toggle { display: none; }
+        @media (min-width: 768px) {
+            .service-navigation.collapse { display: block !important; }
+        }
         .service-sidebar a { display: flex; gap: .75rem; align-items: center; color: #cbd5e1; text-decoration: none; padding: .8rem .75rem; border-radius: .65rem; }
         .service-sidebar a:hover, .service-sidebar a.active { color: #fff; background: #1e40af; }
         .service-sidebar form { margin-top: 2rem; }
-        .service-main { margin-left: 250px; padding: 2rem; }
-        .service-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .service-main { min-width: 0; margin-left: 250px; padding: 2rem; }
+        .service-topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
         .service-card { border: 0; border-radius: 1rem; box-shadow: 0 8px 24px rgba(15, 23, 42, .06); }
         @media (max-width: 767px) {
-            .service-sidebar { position: static; width: 100%; padding: .75rem; }
-            .service-brand { padding: .25rem .5rem .75rem; }
-            .service-sidebar nav { display: flex; flex-wrap: wrap; gap: .25rem; }
+            .service-sidebar { position: relative; width: 100%; padding: .75rem; }
+            .service-sidebar-header { min-height: 44px; }
+            .service-brand { padding: .25rem .5rem; }
+            .service-menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
+            .service-sidebar nav { display: flex; flex-direction: column; gap: .25rem; padding-top: .75rem; }
             .service-sidebar a { padding: .6rem; }
-            .service-sidebar form { display: inline-block; margin: 0 0 0 .4rem; }
+            .service-sidebar form { margin: .75rem 0 0; }
             .service-main { margin-left: 0; padding: 1rem; }
+            .service-topbar { align-items: flex-start; }
+        }
+        @media (max-width: 575px) {
+            .service-topbar { flex-wrap: wrap; }
         }
     </style>
 </head>
 <body>
 <div class="service-shell">
     <aside class="service-sidebar">
-        <div class="service-brand"><i class="fas fa-road me-2"></i>Service Portal</div>
-        <nav aria-label="Service portal navigation">
-            <a href="{{ route('service.dashboard') }}" class="{{ request()->routeIs('service.dashboard') ? 'active' : '' }}"><i class="fas fa-gauge"></i>Dashboard</a>
-            <a href="{{ route('service.requests.index') }}" class="{{ request()->routeIs('service.requests.*') ? 'active' : '' }}"><i class="fas fa-list-check"></i>My requests</a>
-            <a href="{{ route('service.requests.create', 'driver') }}"><i class="fas fa-id-card"></i>Request a driver</a>
-            <a href="{{ route('service.requests.create', 'vehicle') }}"><i class="fas fa-car"></i>Request a vehicle</a>
-            <a href="{{ route('service.profile') }}" class="{{ request()->routeIs('service.profile') ? 'active' : '' }}"><i class="fas fa-user-gear"></i>Account settings</a>
-        </nav>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="btn btn-outline-light btn-sm w-100"><i class="fas fa-right-from-bracket me-2"></i>Sign out</button>
-        </form>
+        <div class="service-sidebar-header">
+            <div class="service-brand"><i class="fas fa-road me-2"></i>Service Portal</div>
+            <button class="service-menu-toggle btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#serviceNavigation" aria-controls="serviceNavigation" aria-expanded="false" aria-label="Toggle service navigation">
+                <i class="fas fa-bars" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="service-navigation collapse" id="serviceNavigation">
+            <nav aria-label="Service portal navigation">
+                <a href="{{ route('service.dashboard') }}" class="{{ request()->routeIs('service.dashboard') ? 'active' : '' }}"><i class="fas fa-gauge"></i>Dashboard</a>
+                <a href="{{ route('service.requests.index') }}" class="{{ request()->routeIs('service.requests.*') ? 'active' : '' }}"><i class="fas fa-list-check"></i>My requests</a>
+                <a href="{{ route('service.requests.create', 'driver') }}"><i class="fas fa-id-card"></i>Request a driver</a>
+                <a href="{{ route('service.requests.create', 'vehicle') }}"><i class="fas fa-car"></i>Request a vehicle</a>
+                <a href="{{ route('service.profile') }}" class="{{ request()->routeIs('service.profile') ? 'active' : '' }}"><i class="fas fa-user-gear"></i>Account settings</a>
+            </nav>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-outline-light btn-sm w-100"><i class="fas fa-right-from-bracket me-2"></i>Sign out</button>
+            </form>
+        </div>
     </aside>
     <main class="service-main">
         <div class="service-topbar">
