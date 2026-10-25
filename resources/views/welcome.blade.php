@@ -12,14 +12,22 @@
 }
 
 .audience-carousel-toggle {
-    display: inline-grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 42px;
+    margin: .75rem auto 0;
+    padding: .65rem 1rem;
     border: 1px solid rgba(23, 23, 23, .25);
-    border-radius: 50%;
+    border-radius: 999px;
     background: #fff;
     color: #171717;
+    font-size: .85rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
     transition: background .2s ease, transform .2s ease;
 }
 
@@ -551,6 +559,25 @@
 
 .audience-option-arrow {
     color: #b9caff;
+}
+
+@media (max-width: 991.98px) {
+    .home-hero-inner {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+        gap: 2rem;
+    }
+
+    .home-hero-heading {
+        width: 100%;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .audience-carousel {
+        width: min(100%, 560px);
+        margin: 0 auto;
+    }
 }
 
 @keyframes heroRiseIn {
