@@ -28,6 +28,44 @@ class SeparatedAdminAccessTest extends TestCase
             ->assertRedirect(route('dashboard'));
     }
 
+    public function test_homepage_hero_guides_drivers_and_vehicle_owners_to_relevant_actions(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Your Next Opportunity')
+            ->assertSee('Starts Here.')
+            ->assertSee('Professional drivers. Trusted partnerships. Opportunities that move you forward.')
+            ->assertSee('Are You a Driver?')
+            ->assertSee('Find opportunities, build your future, and work towards owning your own vehicle.')
+            ->assertSee('Find Driving Jobs')
+            ->assertSee(route('recruitments.index'), false)
+            ->assertSee('Work &amp; Pay', false)
+            ->assertSee(route('service.register.vehicle'), false)
+            ->assertSee('Own a Vehicle?')
+            ->assertSee('Connect with professional drivers and discover services designed around your vehicle.')
+            ->assertSee('Register a Vehicle')
+            ->assertSee(route('vehicles.create'), false)
+            ->assertSee('Find a Driver')
+            ->assertSee(route('drivers.index'), false)
+            ->assertSee('Get Started')
+            ->assertSee(route('register'), false)
+            ->assertSee('Explore opportunities')
+            ->assertSee('Explore owner services')
+            ->assertSee('Looking for a Driver?')
+            ->assertSee('Request a professional driver for your business and keep your people and operations moving.')
+            ->assertSee('Request a Driver')
+            ->assertSee(route('service.login', ['requestType' => 'driver']), false)
+            ->assertSee('Sign in to request a driver')
+            ->assertSee('aria-roledescription="carousel"', false)
+            ->assertSee('aria-label="Previous audience"', false)
+            ->assertSee('aria-label="Next audience"', false)
+            ->assertSee('id="audienceCarouselToggle"', false)
+            ->assertSee('Pause automatic slides')
+            ->assertSee('6500')
+            ->assertSee('Show business driver requests')
+            ->assertSee('audienceTrack.style.transform');
+    }
+
     public function test_regular_users_can_still_access_their_dashboard_and_authenticated_routes(): void
     {
         $user = User::factory()->create(['role' => 'user']);

@@ -18,7 +18,10 @@ class AssignmentWorkflowTest extends TestCase
 
     public function test_driver_customer_and_admin_can_manage_assignment_updates_and_feedback(): void
     {
-        $customer = User::factory()->create(['role' => 'service_customer']);
+        $customer = User::factory()->create([
+            'role' => 'service_customer',
+            'phone' => '+233 24 123 4567',
+        ]);
         $bookingCustomer = User::factory()->create(['role' => 'user']);
         $driverUser = User::factory()->create();
         $admin = User::factory()->create(['role' => 'admin']);
@@ -59,6 +62,9 @@ class AssignmentWorkflowTest extends TestCase
             'location' => 'Tema',
             'amount' => 100,
             'payment_status' => 'paid',
+            'guest_name' => 'Booking Guest',
+            'guest_email' => 'booking-guest@example.test',
+            'guest_phone' => '+233 55 987 6543',
         ]);
 
         $this->actingAs($driverUser)
@@ -127,6 +133,9 @@ class AssignmentWorkflowTest extends TestCase
             ->get(route('admin.assignments.index'))
             ->assertOk()
             ->assertSee($customer->name)
+            ->assertSee('+233 24 123 4567')
+            ->assertSee('+233 55 987 6543')
+            ->assertSee('Booking Guest')
             ->assertSee($driverUser->name)
             ->assertSee($vehicle->license_plate)
             ->assertSee('Please review a concern about the service recipient.')

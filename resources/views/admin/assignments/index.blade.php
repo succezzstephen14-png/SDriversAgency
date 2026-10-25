@@ -18,6 +18,9 @@
                     $driver = $isServiceRequest ? $assignment->assignedDriver : $assignment->driver;
                     $vehicle = $isServiceRequest ? $assignment->assignedVehicle : $assignment->vehicle;
                     $latestProgress = $assignment->assignmentActivities->firstWhere('entry_type', 'progress');
+                    $customerName = $isServiceRequest ? $assignment->user?->name : ($assignment->guest_name ?: $assignment->user?->name);
+                    $customerEmail = $isServiceRequest ? $assignment->user?->email : ($assignment->guest_email ?: $assignment->user?->email);
+                    $customerPhone = $isServiceRequest ? $assignment->user?->phone : ($assignment->guest_phone ?: $assignment->user?->phone);
                 @endphp
                 <article class="card border-0 shadow-sm mb-3">
                     <div class="card-body">
@@ -27,7 +30,14 @@
                         </div>
                         <div class="row mt-2">
                             <div class="col-lg-6">
-                                <p class="mb-1"><strong>Customer:</strong> {{ $assignment->user?->name ?? 'Unknown' }} · {{ $assignment->user?->email ?? 'No email' }}</p>
+                                <p class="mb-1"><strong>Customer:</strong> {{ $customerName ?? 'Unknown' }} · {{ $customerEmail ?? 'No email' }}</p>
+                                <p class="mb-1"><strong>Customer phone:</strong>
+                                    @if($customerPhone)
+                                        <a href="tel:{{ $customerPhone }}">{{ $customerPhone }}</a>
+                                    @else
+                                        Not provided
+                                    @endif
+                                </p>
                                 <p class="mb-1"><strong>Assignment status:</strong> {{ str_replace('_', ' ', ucfirst($assignment->status)) }}</p>
                                 @if($isServiceRequest)
                                     <p class="mb-1"><strong>Request:</strong> {{ ucfirst($assignment->request_type) }} · {{ $assignment->service_label }} · {{ $assignment->location }}</p>

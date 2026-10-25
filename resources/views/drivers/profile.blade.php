@@ -59,6 +59,12 @@
                         {{ $driver->rejection_reason ?? 'Please contact support for more information.' }}
                     </div>
                 @endif
+                @if($driver->drive_test_appointment_date)
+                    <div class="alert alert-primary mb-4">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        <strong>Driving test scheduled:</strong> {{ $driver->drive_test_appointment_date->format('F j, Y') }}
+                    </div>
+                @endif
 
                 <!-- Personal Information -->
                 <div class="card mb-4">

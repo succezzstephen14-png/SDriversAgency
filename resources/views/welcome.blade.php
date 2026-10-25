@@ -11,70 +11,552 @@
     --font-color: {{ $settings->font_color ?? '#1f2937' }};
 }
 
-/* Hero Carousel Styles */
-.hero-carousel {
+.audience-carousel-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(23, 23, 23, .25);
+    border-radius: 50%;
+    background: #fff;
+    color: #171717;
+    transition: background .2s ease, transform .2s ease;
+}
+
+/* Homepage hero */
+.home-hero {
     position: relative;
-    width: 100vw;
-    height: 600px;
     overflow: hidden;
-    border-radius: 0;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
+    min-height: 720px;
+    color: #171717;
+    background: #f5f5f5;
 }
 
-.carousel-slides {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-
-.carousel-slide {
+.home-hero::before {
+    content: '';
     position: absolute;
+    inset: -8px;
+    z-index: 0;
+    background: url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=2000&q=85') center 56% / cover no-repeat;
+    filter: blur(4px);
+}
+
+.home-hero-inner {
+    position: relative;
+    z-index: 1;
     width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    transition: opacity 0.8s ease-in-out;
-    background-size: cover;
-    background-position: center;
+    min-height: 720px;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vh, 3.5rem) clamp(1rem, 4vw, 4rem);
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
 }
 
-.carousel-slide.active {
-    opacity: 1;
-    z-index: 1;
+.home-hero-heading {
+    text-align: center;
+    max-width: none;
+    margin: 0 auto 2rem;
+    animation: heroRiseIn .7s ease-out both;
 }
 
-.carousel-slide::before {
+.home-hero-heading h1 span {
+    color: #1D5BD8;
+}
+
+.home-hero-heading h1 {
+    margin: 0 auto 1rem;
+    max-width: none;
+    color: #1D5BD8;
+    font-size: clamp(2.65rem, 5.8vw, 5rem);
+    font-weight: 800;
+    letter-spacing: -.055em;
+    line-height: 1.04;
+    text-wrap: balance;
+}
+
+.home-hero-title-line {
+    display: block;
+    white-space: nowrap;
+}
+
+.home-hero-heading p {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: .45rem .8rem;
+    border-radius: .5rem;
+    background: rgba(255, 255, 255, .9);
+    color: #171717;
+    font-size: clamp(1rem, 1.6vw, 1.2rem);
+    line-height: 1.7;
+}
+
+.audience-carousel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.audience-carousel-viewport {
+    flex: 1;
+    overflow: hidden;
+    border-radius: 1.35rem;
+}
+
+.audience-track {
+    display: flex;
+    height: 100%;
+    transition: transform .5s cubic-bezier(.22, .68, 0, 1);
+}
+
+.audience-slide {
+    display: flex;
+    flex: 0 0 100%;
+    justify-content: center;
+    height: 100%;
+    min-width: 0;
+    background: linear-gradient(135deg, rgba(0, 0, 0, .48), rgba(0, 0, 0, .18));
+}
+
+.audience-card {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #fff;
+    text-align: center;
+    min-height: 460px;
+    transition: transform .25s ease, box-shadow .25s ease;
+    animation: heroRiseIn .7s ease-out both;
+}
+
+.audience-card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.audience-card-top {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: .9rem;
+    margin-bottom: 1rem;
+}
+
+
+.audience-slide .audience-label,
+.audience-slide .audience-card h2 {
+    color: #fff;
+}
+.audience-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: transparent;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.audience-label,
+.audience-card h2 {
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, .55);
+}
+
+.audience-carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: .8rem;
+}
+
+.audience-carousel-arrow {
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(23, 23, 23, .25);
+    border-radius: 50%;
+    background: #fff;
+    color: #171717;
+    transition: background .2s ease, transform .2s ease;
+}
+
+.audience-carousel-arrow:hover {
+    transform: translateY(-2px);
+    background: rgba(201, 33, 48, .9);
+}
+
+.audience-carousel-dots {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+
+.audience-carousel-dot {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(23, 23, 23, .35);
+    transition: background .2s ease, transform .2s ease;
+}
+
+.audience-carousel-dot[aria-current="true"] {
+    transform: scale(1.25);
+    background: #f0525f;
+}
+
+.audience-carousel-arrow:focus-visible,
+.audience-carousel-toggle:focus-visible,
+.audience-carousel-dot:focus-visible {
+    outline: 3px solid #c92130;
+    outline-offset: 4px;
+}
+
+.audience-label {
+    margin: 0;
+    color: #737373;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.audience-card h2 {
+    margin: 0 0 .55rem;
+    color: #171717;
+    font-size: clamp(1.6rem, 2.6vw, 2rem);
+    font-weight: 750;
+    letter-spacing: -.03em;
+}
+
+.audience-card-copy {
+    min-height: 3.2em;
+    margin: 0 0 2rem;
+    color: rgba(255, 255, 255, .96);
+    font-size: 1.05rem;
+    line-height: 1.75;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, .7);
+}
+
+.audience-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 720px);
+    gap: .65rem;
+}
+
+.audience-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 54px;
+    padding: .8rem 1rem;
+    border: 1px solid #dedede;
+    border-radius: .7rem;
+    background: #fff;
+    color: #262626;
+    font-size: .88rem;
+    font-weight: 650;
+    line-height: 1.3;
+    text-align: center;
+    text-decoration: none;
+    transition: color .2s ease, background .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.audience-action:hover {
+    transform: translateY(-2px);
+    border-color: #bdbdbd;
+    background: #f7f7f7;
+    color: #111;
+}
+
+.audience-text-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    padding: .8rem 1rem;
+    color: #fff;
+    font-size: .88rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+    text-decoration: underline;
+    text-underline-offset: .2em;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, .7);
+    transition: color .2s ease;
+}
+
+.audience-text-link:hover {
+    color: #dbeafe;
+}
+
+.audience-action:focus-visible,
+.audience-teaser:focus-visible {
+    outline: 3px solid #c92130;
+    outline-offset: 3px;
+}
+
+.audience-action-primary {
+    grid-column: 1 / -1;
+    border-color: #1D5BD8;
+    background: #1D5BD8;
+    color: #fff;
+    font-weight: 700;
+}
+
+.audience-action-primary:hover {
+    border-color: #194FB8;
+    background: #194FB8;
+    color: #fff;
+}
+
+.audience-teaser {
+    align-self: center;
+    margin-top: 1.1rem;
+    color: rgba(255, 255, 255, .96);
+    font-size: .86rem;
+    font-weight: 600;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, .7);
+    text-decoration: none;
+    transition: color .2s ease;
+}
+
+.audience-teaser:hover {
+    color: #fff;
+}
+
+.home-hero {
+    min-height: calc(100svh - 72px);
+    color: #fff;
+    background: #080d19;
+}
+
+.home-hero::before {
+    filter: blur(6px) brightness(.42);
+}
+
+.home-hero::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(105deg, rgba(5, 10, 24, .88) 0%, rgba(7, 12, 26, .72) 55%, rgba(4, 8, 18, .54) 100%), radial-gradient(ellipse at 76% 80%, rgba(126, 104, 35, .34), transparent 48%);
 }
 
-.slide-content {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    color: white;
-    max-width: 700px;
-    padding: 2rem;
-    animation: slideInUp 0.8s ease-out;
+.home-hero-inner {
+    width: min(1440px, 100%);
+    min-height: calc(100svh - 72px);
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(380px, .9fr);
+    align-items: center;
+    gap: clamp(3rem, 8vw, 8rem);
+    padding: clamp(3rem, 6vh, 5rem) clamp(1.5rem, 5.5vw, 5rem);
 }
 
-@keyframes slideInUp {
+.home-hero-heading {
+    max-width: 560px;
+    margin: 0;
+    text-align: left;
+}
+
+.home-hero-heading h1 {
+    max-width: 560px;
+    margin: 0 0 1.25rem;
+    color: #fff;
+    font-size: clamp(3.2rem, 5.2vw, 4.2rem);
+    letter-spacing: 0;
+    line-height: 1.03;
+}
+
+.home-hero-heading h1 span {
+    display: block;
+    color: #83a9ff;
+}
+
+.home-hero-title-line {
+    white-space: normal;
+}
+
+.home-hero-heading p {
+    max-width: 500px;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, .9);
+    font-size: 1.2rem;
+    line-height: 1.55;
+}
+
+.home-hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: .75rem;
+    min-height: 56px;
+    margin-top: 2rem;
+    padding: .9rem 1.5rem;
+    border-radius: .75rem;
+    background: #1D5BD8;
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background .2s ease, transform .2s ease;
+}
+
+.home-hero-cta:hover {
+    transform: translateY(-2px);
+    background: #194FB8;
+    color: #fff;
+}
+
+.audience-carousel {
+    display: block;
+    flex: initial;
+    width: 100%;
+}
+
+.audience-carousel-viewport {
+    flex: initial;
+    border-radius: 1.25rem;
+}
+
+.audience-track {
+    height: auto;
+}
+
+.audience-slide {
+    min-height: 360px;
+    background: transparent;
+}
+
+.audience-card {
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 360px;
+    padding: clamp(1.5rem, 3vw, 2rem);
+    border: 1px solid rgba(255, 255, 255, .17);
+    border-radius: 1.25rem;
+    background: rgba(9, 14, 26, .78);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .22);
+    text-align: left;
+    backdrop-filter: blur(14px);
+}
+
+.audience-card-top {
+    align-items: flex-start;
+    margin-bottom: .65rem;
+}
+
+.audience-icon {
+    display: none;
+}
+
+.audience-label,
+.audience-slide .audience-label {
+    color: #a9c2ff;
+    text-shadow: none;
+}
+
+.audience-card h2,
+.audience-slide .audience-card h2 {
+    color: #fff;
+    font-size: 1.75rem;
+    text-shadow: none;
+}
+
+.audience-card-copy {
+    min-height: 0;
+    margin-bottom: 1.25rem;
+}
+
+.audience-actions {
+    grid-template-columns: 1fr;
+    width: 100%;
+    gap: .55rem;
+}
+
+.audience-slide-owner .audience-card-copy,
+.audience-slide-owner .audience-teaser {
+    display: none;
+}
+
+.audience-option {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    min-height: 76px;
+    padding: .8rem 1rem;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: .8rem;
+    background: rgba(255, 255, 255, .09);
+    color: #fff;
+    text-decoration: none;
+    transition: background .2s ease, border-color .2s ease;
+}
+
+.audience-option:hover {
+    border-color: rgba(255, 255, 255, .25);
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+}
+
+.audience-option-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #1D5BD8;
+    color: #fff;
+}
+
+.audience-option-copy {
+    display: grid;
+    flex: 1;
+    gap: .15rem;
+    text-align: left;
+}
+
+.audience-option-copy strong {
+    color: #fff;
+    font-size: .95rem;
+}
+
+.audience-option-copy small {
+    color: rgba(255, 255, 255, .78);
+    font-size: .82rem;
+}
+
+.audience-option-arrow {
+    color: #b9caff;
+}
+
+@keyframes heroRiseIn {
     from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(16px);
     }
     to {
         opacity: 1;
@@ -82,103 +564,78 @@
     }
 }
 
-.slide-content h1 {
-    font-size: 3.5rem;
-    font-weight: 800;
-    margin-bottom: 1.5rem;
-    line-height: 1.1;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.slide-content p {
-    font-size: 1.3rem;
-    margin-bottom: 2rem;
-    opacity: 0.95;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.carousel-controls {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 1rem;
-    z-index: 3;
-}
-
-.carousel-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.5);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-}
-
-.carousel-dot.active {
-    background: white;
-    transform: scale(1.3);
-}
-
-.carousel-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 3;
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.3);
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.carousel-arrow:hover {
-    background: rgba(255, 255, 255, 0.5);
-    transform: translateY(-50%) scale(1.1);
-}
-
-.carousel-arrow.prev {
-    left: 2rem;
-}
-
-.carousel-arrow.next {
-    right: 2rem;
-}
-
-@media (max-width: 768px) {
-    .hero-carousel {
-        height: 400px;
+@media (max-width: 767.98px) {
+    .home-hero,
+    .home-hero-inner {
+        min-height: 0;
     }
 
-    .slide-content h1 {
-        font-size: 2rem;
+    .home-hero-inner {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+        gap: 2rem;
+        padding: 3.5rem 1rem 2rem;
     }
 
-    .slide-content p {
-        font-size: 1rem;
+    .home-hero-heading,
+    .audience-carousel {
+        width: 100%;
+        min-width: 0;
     }
 
-    .carousel-arrow {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
+    .home-hero-heading {
+        margin-bottom: 0;
     }
 
-    .carousel-arrow.prev {
-        left: 1rem;
+    .home-hero-heading h1 {
+        font-size: 2.75rem;
     }
 
-    .carousel-arrow.next {
-        right: 1rem;
+    .audience-carousel {
+        max-width: 560px;
+        margin: 0 auto;
+    }
+
+    .audience-slide {
+        min-height: 340px;
+    }
+
+    .audience-card {
+        min-height: 340px;
+    }
+
+    .audience-slide {
+        padding: 0;
+    }
+
+    .audience-card {
+        min-height: 390px;
+        padding: 2rem 1.5rem;
+    }
+
+    .audience-card-copy {
+        min-height: 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .home-hero-heading h1 {
+        font-size: 2.5rem;
+    }
+
+    .audience-card {
+        padding: 1.35rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-hero *,
+    .home-hero *::before,
+    .home-hero *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
     }
 }
 
@@ -743,11 +1200,6 @@
         padding: 3rem 0;
     }
 
-    .slide-content {
-        width: 100%;
-        padding: 1.25rem;
-    }
-
     .policy-grid {
         grid-template-columns: minmax(0, 1fr);
         gap: 1.25rem;
@@ -961,75 +1413,106 @@ html {
     }
 }
 </style>
-<div class="hero-carousel">
-    <div class="carousel-slides" id="carouselSlides">
-        @if(isset($heroSlides) && $heroSlides->count())
-            @foreach($heroSlides as $slide)
-                <div class="carousel-slide {{ $loop->first ? 'active' : '' }}" style="background-image: url('{{ $slide->image_url ?: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1500&q=80' }}');">
-                    <div class="slide-content">
-                        <h1>{{ $slide->title }}</h1>
-                        <p>{{ $slide->description ?? $slide->content }}</p>
-                        @if($slide->button_text && $slide->button_link)
-                            <a href="{{ $slide->button_link }}" class="btn btn-primary btn-lg">{{ $slide->button_text }}</a>
-                        @endif
+<section class="home-hero" aria-labelledby="home-hero-title">
+    <div class="home-hero-inner">
+        <header class="home-hero-heading">
+            <h1 id="home-hero-title">Your Next Opportunity<br><span>Starts Here.</span></h1>
+            <p>Professional drivers. Trusted partnerships. Opportunities that move you forward.</p>
+            <a class="home-hero-cta" href="{{ route('register') }}">Get Started <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+        </header>
+
+        <div class="audience-carousel" role="region" aria-label="Choose your path" aria-roledescription="carousel" aria-keyshortcuts="ArrowLeft ArrowRight" tabindex="0" id="audienceCarousel">
+            <div class="audience-carousel-viewport">
+                <div class="audience-track" id="audienceTrack" aria-live="off">
+                    <div class="audience-slide" role="group" aria-roledescription="slide" aria-label="1 of 4: For Drivers" aria-hidden="true" inert>
+                        <article class="audience-card">
+                            <div class="audience-card-top">
+                                <span class="audience-icon"><i class="fas fa-id-card" aria-hidden="true"></i></span>
+                                <p class="audience-label">For Drivers</p>
+                            </div>
+                            <h2>Are You a Driver?</h2>
+                            <p class="audience-card-copy">Find opportunities, build your future, and work towards owning your own vehicle.</p>
+                            <div class="audience-actions">
+                                <a class="audience-text-link" href="{{ route('recruitments.index') }}">Find Driving Jobs</a>
+                                <a class="audience-text-link" href="{{ route('service.register.vehicle') }}">Work &amp; Pay</a>
+                                <a class="audience-action audience-action-primary" href="{{ route('register') }}">Get Started <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            </div>
+                            <a class="audience-teaser" href="{{ route('recruitments.index') }}">Explore opportunities <span aria-hidden="true">→</span></a>
+                        </article>
+                    </div>
+
+                    <div class="audience-slide audience-slide-owner" role="group" aria-roledescription="slide" aria-label="2 of 4: For Vehicle Owners">
+                        <article class="audience-card">
+                            <div class="audience-card-top">
+                                <span class="audience-icon"><i class="fas fa-car" aria-hidden="true"></i></span>
+                                <p class="audience-label">For Vehicle Owners</p>
+                            </div>
+                            <h2>Own a Vehicle?</h2>
+                            <p class="audience-card-copy">Connect with professional drivers and discover services designed around your vehicle.</p>
+                            <div class="audience-actions">
+                                <a class="audience-option" href="{{ route('vehicles.create') }}">
+                                    <span class="audience-option-icon"><i class="fas fa-car" aria-hidden="true"></i></span>
+                                    <span class="audience-option-copy"><strong>Register a Vehicle</strong><small>List your car for approved drivers</small></span>
+                                    <i class="fas fa-chevron-right audience-option-arrow" aria-hidden="true"></i>
+                                </a>
+                                <a class="audience-option" href="{{ route('drivers.index') }}">
+                                    <span class="audience-option-icon"><i class="fas fa-user" aria-hidden="true"></i></span>
+                                    <span class="audience-option-copy"><strong>Find a Driver</strong><small>Match with a verified professional</small></span>
+                                    <i class="fas fa-chevron-right audience-option-arrow" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                            <a class="audience-teaser" href="{{ route('vehicles.create') }}">Explore owner services <span aria-hidden="true">→</span></a>
+                        </article>
+                    </div>
+
+                    <div class="audience-slide" role="group" aria-roledescription="slide" aria-label="3 of 4: For Businesses and Companies" aria-hidden="true" inert>
+                        <article class="audience-card">
+                            <div class="audience-card-top">
+                                <span class="audience-icon"><i class="fas fa-building" aria-hidden="true"></i></span>
+                                <p class="audience-label">For Businesses &amp; Companies</p>
+                            </div>
+                            <h2>Looking for a Driver?</h2>
+                            <p class="audience-card-copy">Request a professional driver for your business and keep your people and operations moving.</p>
+                            <div class="audience-actions">
+                                <a class="audience-action audience-action-primary" href="{{ route('service.login', ['requestType' => 'driver']) }}">Request a Driver <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                                <a class="audience-text-link" href="{{ route('service.login', ['requestType' => 'driver']) }}">Show business driver requests</a>
+                            </div>
+                            <a class="audience-teaser" href="{{ route('service.login', ['requestType' => 'driver']) }}">Sign in to request a driver <span aria-hidden="true">→</span></a>
+                        </article>
+                    </div>
+
+                    <div class="audience-slide" role="group" aria-roledescription="slide" aria-label="4 of 4: Drivers Looking for a Vehicle" aria-hidden="true" inert>
+                        <article class="audience-card">
+                            <div class="audience-card-top">
+                                <span class="audience-icon"><i class="fas fa-car" aria-hidden="true"></i></span>
+                                <p class="audience-label">For Drivers</p>
+                            </div>
+                            <h2>Looking for a vehicle to work with?</h2>
+                            <p class="audience-card-copy">Request a vehicle and find the right opportunity to keep you moving.</p>
+                            <div class="audience-actions">
+                                <a class="audience-action audience-action-primary" href="{{ route('service.login', ['requestType' => 'vehicle']) }}">Request a Vehicle <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            </div>
+                            <a class="audience-teaser" href="{{ route('service.login', ['requestType' => 'vehicle']) }}">Sign in to request a vehicle <span aria-hidden="true">→</span></a>
+                        </article>
                     </div>
                 </div>
-            @endforeach
-        @else
-            <div class="carousel-slide active" style="background-image: url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=1500&q=80');">
-                <div class="slide-content">
-                    <h1>Reliable Transportation Services</h1>
-                    <p>Explore trusted vehicles and services for your transportation needs</p>
-                    <a href="{{ route('book.index') }}" class="btn btn-primary btn-lg">Explore Services</a>
-                </div>
             </div>
 
-            <div class="carousel-slide" style="background-image: url('https://images.unsplash.com/photo-1552820728-8ac41f1ce891?auto=format&fit=crop&w=1500&q=80');">
-                <div class="slide-content">
-                    <h1>Affordable Vehicle Rentals</h1>
-                    <p>Wide selection of well-maintained vehicles for your business and personal use</p>
-                    <a href="{{ route('vehicles.index') }}" class="btn btn-primary btn-lg">Browse Vehicles</a>
+            <div class="audience-carousel-controls" aria-label="Carousel controls">
+                <button type="button" class="audience-carousel-arrow" aria-label="Previous audience" data-direction="prev">&larr;</button>
+                <div class="audience-carousel-dots" aria-label="Choose a slide">
+                    <button type="button" class="audience-carousel-dot" aria-label="Show slide 1" aria-current="true"></button>
+                    <button type="button" class="audience-carousel-dot" aria-label="Show slide 2" aria-current="false"></button>
+                    <button type="button" class="audience-carousel-dot" aria-label="Show slide 3" aria-current="false"></button>
+                    <button type="button" class="audience-carousel-dot" aria-label="Show slide 4" aria-current="false"></button>
                 </div>
+                <button type="button" class="audience-carousel-arrow" aria-label="Next audience" data-direction="next">&rarr;</button>
             </div>
-
-            <div class="carousel-slide" style="background-image: url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1500&q=80');">
-                <div class="slide-content">
-                    <h1>Easy Booking System</h1>
-                    <p>Simple and secure booking process with real-time confirmation and tracking</p>
-                    <a href="{{ route('book.index') }}" class="btn btn-primary btn-lg">Book Now</a>
-                </div>
-            </div>
-
-            <div class="carousel-slide" style="background-image: url('https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1500&q=80');">
-                <div class="slide-content">
-                    <h1>Join Our Growing Team</h1>
-                    <p>Explore recruitment opportunities for drivers and vehicle owners</p>
-                    <a href="{{ route('recruitments.index') }}" class="btn btn-primary btn-lg">View Opportunities</a>
-                </div>
-            </div>
-        @endif
+            <button type="button" class="audience-carousel-toggle" id="audienceCarouselToggle" aria-label="Pause automatic slides" aria-pressed="false">Pause automatic slides</button>
+            <span class="visually-hidden" id="audienceCarouselStatus" role="status" aria-live="polite">2 of 4: For Vehicle Owners</span>
+        </div>
     </div>
-
-    <div class="carousel-controls">
-        @if(isset($heroSlides) && $heroSlides->count())
-            @foreach($heroSlides as $slide)
-                <button class="carousel-dot {{ $loop->first ? 'active' : '' }}" onclick="currentSlide({{ $loop->index }})"></button>
-            @endforeach
-        @else
-            <button class="carousel-dot active" onclick="currentSlide(0)"></button>
-            <button class="carousel-dot" onclick="currentSlide(1)"></button>
-            <button class="carousel-dot" onclick="currentSlide(2)"></button>
-            <button class="carousel-dot" onclick="currentSlide(3)"></button>
-        @endif
-    </div>
-
-    <button class="carousel-arrow prev" onclick="changeSlide(-1)">
-        <i class="fas fa-chevron-left"></i>
-    </button>
-    <button class="carousel-arrow next" onclick="changeSlide(1)">
-        <i class="fas fa-chevron-right"></i>
-    </button>
-</div>
+</section>
 
 @if($siteSettings && $siteSettings->home_page_content)
 <section class="custom-content-section py-5">
@@ -1516,7 +1999,7 @@ html {
             </div>
             <div class="col-lg-6 mt-4 mt-lg-0">
                 <div class="about-image">
-                    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80" alt="Professional drivers and transportation" class="img-fluid rounded shadow">
+                    <img src="https://images.unsplash.com/photo-1696634523711-d8ca4758cccd?auto=format&fit=crop&w=1200&q=85" alt="A professional driver and passenger riding together in a car" class="img-fluid rounded shadow">
                 </div>
             </div>
         </div>
@@ -1748,39 +2231,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 </script>
 
-<script>
-// Carousel Functionality
-let currentSlideIndex = 0;
-const slides = document.querySelectorAll('.carousel-slide');
-const dots = document.querySelectorAll('.carousel-dot');
-const totalSlides = slides.length;
-
-function showSlide(n) {
-    slides.forEach(slide => slide.classList.remove('active'));
-    dots.forEach(dot => dot.classList.remove('active'));
-    
-    slides[n].classList.add('active');
-    dots[n].classList.add('active');
-}
-
-function changeSlide(n) {
-    currentSlideIndex += n;
-    if (currentSlideIndex >= totalSlides) currentSlideIndex = 0;
-    if (currentSlideIndex < 0) currentSlideIndex = totalSlides - 1;
-    showSlide(currentSlideIndex);
-}
-
-function currentSlide(n) {
-    currentSlideIndex = n;
-    showSlide(currentSlideIndex);
-}
-
-// Auto-advance carousel every 5 seconds
-setInterval(() => {
-    changeSlide(1);
-}, 5000);
-</script>
-
 <!-- Scroll to Top Button -->
 <button id="scrollToTopBtn" title="Go to top">
     <i class="fas fa-arrow-up"></i>
@@ -1806,6 +2256,129 @@ scrollToTopBtn.addEventListener('click', () => {
         behavior: 'smooth'
     });
 });
+</script>
+
+<script>
+const audienceCarousel = document.getElementById('audienceCarousel');
+
+if (audienceCarousel) {
+    const audienceTrack = document.getElementById('audienceTrack');
+    const audienceSlides = [...audienceTrack.querySelectorAll('.audience-slide')];
+    const audienceStatus = document.getElementById('audienceCarouselStatus');
+    const audienceDots = [...document.querySelectorAll('.audience-carousel-dot')];
+    const audiencePrevButton = document.querySelector('.audience-carousel-arrow[data-direction="prev"]');
+    const audienceNextButton = document.querySelector('.audience-carousel-arrow[data-direction="next"]');
+    const audienceToggleButton = document.getElementById('audienceCarouselToggle');
+    const reducedMotionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let activeAudienceSlide = 0;
+    let touchStartX = null;
+    let rotationTimer = null;
+    let userPausedRotation = reducedMotionPreference.matches;
+    let focusInCarousel = false;
+
+    function updateAudienceDots() {
+        audienceDots.forEach((dot, index) => {
+            const isCurrent = index === activeAudienceSlide;
+            dot.setAttribute('aria-current', String(isCurrent));
+            dot.setAttribute('aria-label', `Show slide ${index + 1}`);
+        });
+    }
+
+    function showAudienceSlide(index) {
+        activeAudienceSlide = (index + audienceSlides.length) % audienceSlides.length;
+        audienceTrack.style.transform = `translateX(-${activeAudienceSlide * 100}%)`;
+
+        audienceSlides.forEach((slide, slideIndex) => {
+            const isActive = slideIndex === activeAudienceSlide;
+            slide.inert = !isActive;
+            slide.setAttribute('aria-hidden', String(!isActive));
+        });
+
+        audienceStatus.textContent = audienceSlides[activeAudienceSlide].getAttribute('aria-label');
+        updateAudienceDots();
+    }
+
+    function updateRotation() {
+        window.clearTimeout(rotationTimer);
+        rotationTimer = null;
+
+        const shouldRotate = !userPausedRotation
+            && !focusInCarousel
+            && !document.hidden
+            && !reducedMotionPreference.matches;
+
+        if (shouldRotate) {
+            rotationTimer = window.setTimeout(() => {
+                showAudienceSlide(activeAudienceSlide + 1);
+                updateRotation();
+            }, 6500);
+        }
+    }
+
+    function moveToAudienceSlide(index) {
+        showAudienceSlide(index);
+        updateRotation();
+    }
+
+    audiencePrevButton.addEventListener('click', () => moveToAudienceSlide(activeAudienceSlide - 1));
+    audienceNextButton.addEventListener('click', () => moveToAudienceSlide(activeAudienceSlide + 1));
+    audienceDots.forEach((dot, index) => {
+        dot.addEventListener('click', () => moveToAudienceSlide(index));
+    });
+    audienceToggleButton.addEventListener('click', () => {
+        userPausedRotation = !userPausedRotation;
+        audienceToggleButton.setAttribute('aria-label', userPausedRotation ? 'Resume automatic slides' : 'Pause automatic slides');
+        audienceToggleButton.setAttribute('aria-pressed', String(userPausedRotation));
+        audienceToggleButton.textContent = userPausedRotation ? 'Resume automatic slides' : 'Pause automatic slides';
+        updateRotation();
+    });
+
+    audienceCarousel.addEventListener('focusin', () => {
+        focusInCarousel = true;
+        updateRotation();
+    });
+    audienceCarousel.addEventListener('focusout', event => {
+        if (!audienceCarousel.contains(event.relatedTarget)) {
+            focusInCarousel = false;
+            updateRotation();
+        }
+    });
+    document.addEventListener('visibilitychange', updateRotation);
+    reducedMotionPreference.addEventListener('change', event => {
+        userPausedRotation = event.matches;
+        updateRotation();
+    });
+
+    audienceCarousel.addEventListener('keydown', event => {
+        if (event.target !== audienceCarousel) return;
+
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            moveToAudienceSlide(activeAudienceSlide + (event.key === 'ArrowRight' ? 1 : -1));
+        }
+    });
+
+    const audienceViewport = audienceCarousel.querySelector('.audience-carousel-viewport');
+    audienceViewport.addEventListener('pointerdown', event => {
+        touchStartX = event.pointerType === 'touch' ? event.clientX : null;
+    });
+    audienceViewport.addEventListener('pointerup', event => {
+        if (touchStartX === null) return;
+
+        const swipeDistance = event.clientX - touchStartX;
+        touchStartX = null;
+
+        if (Math.abs(swipeDistance) > 50) {
+            moveToAudienceSlide(activeAudienceSlide + (swipeDistance < 0 ? 1 : -1));
+        }
+    });
+    audienceViewport.addEventListener('pointercancel', () => {
+        touchStartX = null;
+    });
+
+    showAudienceSlide(1);
+    updateRotation();
+}
 </script>
 
 @endsection

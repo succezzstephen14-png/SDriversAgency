@@ -140,6 +140,7 @@
             <div>
                 <h1>{{ $vehicle->year }} {{ $vehicle->make }} {{ $vehicle->model }}</h1>
                 <p style="opacity: .85; margin: .5rem 0 0;">Posted by {{ $vehicle->user->name }} — {{ $vehicle->user->email }}</p>
+                <p style="opacity: .85; margin: .25rem 0 0;">Phone: {{ $vehicle->user->phone ?: 'Not provided' }}</p>
             </div>
             <div class="status-pill {{ $vehicle->approval_status }}">{{ ucfirst($vehicle->approval_status) }}</div>
         </div>
@@ -216,6 +217,14 @@
 
                 <div class="detail-grid">
                     <div class="detail-box">
+                        <div class="detail-label">Application ID</div>
+                        <div class="detail-value">{{ $vehicle->application_id ?? 'N/A' }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Registration Number</div>
+                        <div class="detail-value">{{ $vehicle->registration_number ?? 'N/A' }}</div>
+                    </div>
+                    <div class="detail-box">
                         <div class="detail-label">License Plate</div>
                         <div class="detail-value">{{ $vehicle->license_plate ?? 'N/A' }}</div>
                     </div>
@@ -232,6 +241,52 @@
                         <div class="detail-value">{{ $vehicle->capacity ?? 'N/A' }} seats</div>
                     </div>
                     <div class="detail-box">
+                        <div class="detail-label">Number of Seats</div>
+                        <div class="detail-value">{{ $vehicle->number_of_seats ?? 'N/A' }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Condition</div>
+                        <div class="detail-value">{{ str_replace('_', ' ', $vehicle->condition_label) }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Fuel Type</div>
+                        <div class="detail-value">{{ str_replace('_', ' ', ucfirst($vehicle->fuel_type ?? 'Not provided')) }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Transmission</div>
+                        <div class="detail-value">{{ str_replace('_', ' ', ucfirst($vehicle->transmission ?? 'Not provided')) }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Engine Size</div>
+                        <div class="detail-value">{{ $vehicle->engine_size ?: 'Not provided' }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Mileage</div>
+                        <div class="detail-value">{{ $vehicle->mileage !== null ? number_format($vehicle->mileage) . ' km' : 'Not provided' }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Registration Date</div>
+                        <div class="detail-value">{{ $vehicle->registration_date?->format('M j, Y') ?? 'Not provided' }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Registration Expiry</div>
+                        <div class="detail-value">{{ $vehicle->registration_expiry?->format('M j, Y') ?? 'Not provided' }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Insurance Expiry</div>
+                        <div class="detail-value">{{ $vehicle->insurance_expiry?->format('M j, Y') ?? 'Not provided' }}</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">Roadworthiness Expiry</div>
+                        <div class="detail-value">{{ $vehicle->inspection_expiry?->format('M j, Y') ?? 'Not provided' }}</div>
+                    </div>
+                    @if($vehicle->inspection_appointment_date)
+                        <div class="detail-box border border-primary">
+                            <div class="detail-label">Inspection Appointment</div>
+                            <div class="detail-value">{{ $vehicle->inspection_appointment_date->format('M j, Y') }}</div>
+                        </div>
+                    @endif
+                    <div class="detail-box">
                         <div class="detail-label">Status</div>
                         <div class="detail-value">{{ ucfirst($vehicle->status ?? 'Unknown') }}</div>
                     </div>
@@ -241,6 +296,19 @@
                     </div>
                 </div>
             </div>
+
+            @if(count($vehicle->imagePaths()) > 1)
+                <div class="detail-box">
+                    <div class="detail-label">Additional Vehicle Images</div>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach(array_slice($vehicle->imagePaths(), 1) as $index => $imagePath)
+                            <a href="{{ route('admin.documents.show', ['type' => 'vehicle', 'id' => $vehicle->id, 'field' => 'image_url', 'index' => $index + 1]) }}" target="_blank" rel="noopener">
+                                <img src="{{ route('admin.documents.show', ['type' => 'vehicle', 'id' => $vehicle->id, 'field' => 'image_url', 'index' => $index + 1]) }}" alt="Vehicle image {{ $index + 2 }}" style="width:140px;height:100px;object-fit:cover;border-radius:10px;">
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             <div class="detail-box">
                 <div class="detail-label">Uploaded Documents</div>
@@ -264,6 +332,36 @@
                         <li>No documents uploaded for this vehicle.</li>
                     @endif
                 </ul>
+            </div>
+
+            <div class="detail-box">
+                <div class="detail-label">Schedule Vehicle Inspection</div>
+                @if($vehicle->inspection_appointment_date)
+                    <p class="mb-3">Current appointment: <strong>{{ $vehicle->inspection_appointment_date->format('F j, Y') }}</strong></p>
+                @else
+                    <p class="text-muted mb-3">No inspection appointment has been issued.</p>
+                @endif
+                <form action="{{ route('admin.vehicles.inspection.schedule', $vehicle) }}" method="POST" class="d-flex flex-wrap align-items-end gap-3">
+                    @csrf
+                    @method('PUT')
+                    <div>
+                        <label for="inspection_appointment_date" class="form-label">Inspection date</label>
+                        <input
+                            id="inspection_appointment_date"
+                            name="inspection_appointment_date"
+                            type="date"
+                            class="form-control"
+                            min="{{ now()->toDateString() }}"
+                            value="{{ old('inspection_appointment_date', $vehicle->inspection_appointment_date?->toDateString()) }}"
+                            required
+                        >
+                        @error('inspection_appointment_date')<div class="text-danger small">{{ $message }}</div>@enderror
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        {{ $vehicle->inspection_appointment_date ? 'Update inspection date' : 'Issue inspection date' }}
+                    </button>
+                </form>
+                <p class="small text-muted mt-2 mb-0">The vehicle owner will receive an in-app notification and email when the date is scheduled.</p>
             </div>
 
             <div class="action-row">

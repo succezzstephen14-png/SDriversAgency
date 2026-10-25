@@ -562,12 +562,12 @@
 
         /* Full-Width Section Styles */
         section {
-            width: 100vw;
+            width: 100%;
             position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
+            left: auto;
+            right: auto;
+            margin-left: 0;
+            margin-right: 0;
         }
 
         .section-inner {

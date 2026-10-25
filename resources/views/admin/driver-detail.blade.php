@@ -345,6 +345,34 @@
                 </div>
 
                 <div class="detail-box" style="margin-top:1rem;">
+                    <div class="detail-label">Schedule Driving Test</div>
+                    @if($driver->drive_test_appointment_date)
+                        <p class="mb-3">Current appointment: <strong>{{ $driver->drive_test_appointment_date->format('F j, Y') }}</strong></p>
+                    @else
+                        <p class="text-muted mb-3">No driving test appointment has been issued.</p>
+                    @endif
+                    <form action="{{ route('admin.drivers.drive-test.schedule', $driver) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <label for="drive_test_appointment_date" class="form-label">Driving test date</label>
+                        <input
+                            id="drive_test_appointment_date"
+                            name="drive_test_appointment_date"
+                            type="date"
+                            class="form-control"
+                            min="{{ now()->toDateString() }}"
+                            value="{{ old('drive_test_appointment_date', $driver->drive_test_appointment_date?->toDateString()) }}"
+                            required
+                        >
+                        @error('drive_test_appointment_date')<div class="text-danger small">{{ $message }}</div>@enderror
+                        <button type="submit" class="btn btn-primary w-100 mt-3">
+                            {{ $driver->drive_test_appointment_date ? 'Update test date' : 'Issue test date' }}
+                        </button>
+                    </form>
+                    <p class="small text-muted mt-2 mb-0">The driver will receive an in-app notification and email.</p>
+                </div>
+
+                <div class="detail-box" style="margin-top:1rem;">
                     <div class="detail-label">Driver vetting checklist</div>
                     <p class="small text-muted">Mark each item complete after reviewing the evidence or recording the screening result. Saving this checklist does not approve or reject the driver.</p>
                     <form action="{{ route('admin.drivers.vetting-checks.update', $driver) }}" method="POST">

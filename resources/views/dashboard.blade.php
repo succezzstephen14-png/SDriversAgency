@@ -362,6 +362,12 @@
                     @else
                         <p class="text-muted mb-0">Your driver profile has been approved.</p>
                     @endif
+                    @if($driverProfile->drive_test_appointment_date)
+                        <p class="text-primary mt-2 mb-0">
+                            <i class="fas fa-calendar-check me-1"></i>
+                            <strong>Driving test:</strong> {{ $driverProfile->drive_test_appointment_date->format('M j, Y') }}
+                        </p>
+                    @endif
                     <a href="{{ route('drivers.profile') }}" class="btn btn-soft btn-sm mt-2">View driver profile</a>
                 </div>
             @else

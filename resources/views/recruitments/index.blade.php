@@ -5,7 +5,7 @@
 @section('content')
 <style>
     .recruitments-hero {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         padding: 4rem 0;
         margin-bottom: 3rem;

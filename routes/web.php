@@ -263,6 +263,7 @@ Route::domain(config('admin.domain'))->middleware('auth')->prefix('admin')->name
     // Legacy pending approval routes (keeping for backward compatibility)
     Route::get('/pending-drivers', [AdminController::class, 'pendingDrivers'])->name('pending-drivers');
     Route::get('/drivers/{driver}', [AdminController::class, 'driverDetail'])->name('drivers.detail');
+    Route::put('/drivers/{driver}/drive-test', [AdminController::class, 'scheduleDriverTest'])->name('drivers.drive-test.schedule');
     Route::put('/drivers/{driver}/vetting-checks', [AdminController::class, 'saveDriverVettingChecks'])->name('drivers.vetting-checks.update');
     Route::post('/drivers/{driver}/application-changes/approve', [AdminController::class, 'approveDriverApplicationChanges'])->name('drivers.application-changes.approve');
     Route::post('/drivers/{driver}/application-changes/reject', [AdminController::class, 'rejectDriverApplicationChanges'])->name('drivers.application-changes.reject');
@@ -271,6 +272,7 @@ Route::domain(config('admin.domain'))->middleware('auth')->prefix('admin')->name
     
     Route::get('/pending-vehicles', [AdminController::class, 'pendingVehicles'])->name('pending-vehicles');
     Route::get('/vehicles/{vehicle}', [AdminController::class, 'vehicleDetail'])->name('vehicles.detail');
+    Route::put('/vehicles/{vehicle}/inspection', [AdminController::class, 'scheduleVehicleInspection'])->name('vehicles.inspection.schedule');
     Route::post('/vehicles/{vehicle}/application-changes/approve', [AdminController::class, 'approveVehicleApplicationChanges'])->name('vehicles.application-changes.approve');
     Route::post('/vehicles/{vehicle}/application-changes/reject', [AdminController::class, 'rejectVehicleApplicationChanges'])->name('vehicles.application-changes.reject');
     Route::post('/vehicles/{vehicle}/approve', [AdminController::class, 'approveVehicle'])->name('vehicles.approve');

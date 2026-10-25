@@ -35,6 +35,12 @@
                     <p class="mb-1">{{ $vehicle->year }} • {{ ucfirst($vehicle->vehicle_type) }}</p>
                     <p class="mb-1">Application ID: <code>{{ $vehicle->application_id }}</code></p>
                     <p class="mb-1">License: {{ $vehicle->license_plate }}</p>
+                    @if($vehicle->inspection_appointment_date)
+                        <div class="alert alert-primary mt-2 mb-2">
+                            <i class="fas fa-calendar-check me-1"></i>
+                            <strong>Inspection scheduled:</strong> {{ $vehicle->inspection_appointment_date->format('M j, Y') }}
+                        </div>
+                    @endif
                     
                     @if($vehicle->approval_status === 'pending')
                         <div class="alert alert-info alert-sm mt-2 mb-2">

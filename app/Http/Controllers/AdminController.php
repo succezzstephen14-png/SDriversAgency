@@ -837,6 +837,24 @@ class AdminController extends Controller
         return view('admin.driver-detail', compact('driver'));
     }
 
+    public function scheduleDriverTest(Request $request, Driver $driver)
+    {
+        $validated = $request->validate([
+            'drive_test_appointment_date' => ['required', 'date', 'after_or_equal:today'],
+        ]);
+
+        $driver->update([
+            'drive_test_appointment_date' => $validated['drive_test_appointment_date'],
+        ]);
+
+        $testDate = $driver->drive_test_appointment_date->format('F j, Y');
+        $message = "Your driving test has been scheduled for {$testDate}. Please contact the agency if you need to discuss this appointment.";
+        $this->notifyOwner($driver, 'Driving test scheduled', $message);
+
+        return redirect()->route('admin.drivers.detail', $driver)
+            ->with('success', "Driving test scheduled for {$testDate}; the driver was notified.");
+    }
+
     /**
      * Save an administrator's driver vetting checklist.
      */
@@ -884,6 +902,25 @@ class AdminController extends Controller
     {
         $vehicle->load('user');
         return view('admin.vehicle-detail', compact('vehicle'));
+    }
+
+    public function scheduleVehicleInspection(Request $request, Vehicle $vehicle)
+    {
+        $validated = $request->validate([
+            'inspection_appointment_date' => ['required', 'date', 'after_or_equal:today'],
+        ]);
+
+        $vehicle->update([
+            'inspection_appointment_date' => $validated['inspection_appointment_date'],
+        ]);
+
+        $inspectionDate = $vehicle->inspection_appointment_date->format('F j, Y');
+        $message = "An inspection for your {$vehicle->year} {$vehicle->make} {$vehicle->model} "
+            . "has been scheduled for {$inspectionDate}. Please contact the agency if you need to discuss this appointment.";
+        $this->notifyOwner($vehicle, 'Vehicle inspection scheduled', $message);
+
+        return redirect()->route('admin.vehicles.detail', $vehicle)
+            ->with('success', "Inspection scheduled for {$inspectionDate}; the vehicle owner was notified.");
     }
 
     /**
