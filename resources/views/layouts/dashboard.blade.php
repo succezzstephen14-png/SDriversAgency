@@ -588,7 +588,7 @@
                 <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
                 <div class="meta">
                     <h4>{{ Auth::user()->name }}</h4>
-                    <p>{{ ucfirst(Auth::user()->role ?: 'User') }}</p>
+                    <p>{{ ucfirst(str_replace('_', ' ', Auth::user()->role ?: 'User')) }}</p>
                 </div>
             </div>
 
@@ -601,30 +601,32 @@
                     <span class="icon"><i class="fas fa-user-circle"></i></span>
                     Complete Profile
                 </a>
-                <a href="{{ route('drivers.create') }}" class="{{ request()->routeIs('drivers.create') ? 'active' : '' }}">
-                    <span class="icon"><i class="fas fa-user-tie"></i></span>
-                    Create Driver
-                </a>
-                <a href="{{ route('vehicles.create') }}" class="{{ request()->routeIs('vehicles.create') ? 'active' : '' }}">
-                    <span class="icon"><i class="fas fa-car-side"></i></span>
-                    Create Vehicle
-                </a>
-                <a href="{{ route('vehicles.my-vehicles') }}" class="{{ request()->routeIs('vehicles.my-vehicles') ? 'active' : '' }}">
-                    <span class="icon"><i class="fas fa-list"></i></span>
-                    My Vehicles
-                </a>
-                <a href="{{ route('vehicles.pending-vehicles') }}" class="{{ request()->routeIs('vehicles.pending-vehicles') ? 'active' : '' }}">
-                    <span class="icon"><i class="fas fa-clock"></i></span>
-                    Pending Vehicles
-                </a>
-                <a href="{{ route('bookings.my-bookings') }}" class="{{ request()->routeIs('bookings.my-bookings') ? 'active' : '' }}">
-                    <span class="icon"><i class="fas fa-calendar-check"></i></span>
-                    My Bookings
-                </a>
-                @if(Auth::user()->driver)
+                @if(in_array(Auth::user()->role, ['driver', 'user'], true))
+                    <a href="{{ route('drivers.create') }}" class="{{ request()->routeIs('drivers.create') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-user-tie"></i></span>
+                        Create Driver
+                    </a>
+                    <a href="{{ route('bookings.my-bookings') }}" class="{{ request()->routeIs('bookings.my-bookings') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-calendar-check"></i></span>
+                        My Bookings
+                    </a>
                     <a href="{{ route('driver.assignments.index') }}" class="{{ request()->routeIs('driver.assignments.*') ? 'active' : '' }}">
                         <span class="icon"><i class="fas fa-route"></i></span>
                         My Assignments
+                    </a>
+                @endif
+                @if(in_array(Auth::user()->role, ['vehicle_owner', 'user'], true))
+                    <a href="{{ route('vehicles.create') }}" class="{{ request()->routeIs('vehicles.create') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-car-side"></i></span>
+                        Create Vehicle
+                    </a>
+                    <a href="{{ route('vehicles.my-vehicles') }}" class="{{ request()->routeIs('vehicles.my-vehicles') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-list"></i></span>
+                        My Vehicles
+                    </a>
+                    <a href="{{ route('vehicles.pending-vehicles') }}" class="{{ request()->routeIs('vehicles.pending-vehicles') ? 'active' : '' }}">
+                        <span class="icon"><i class="fas fa-clock"></i></span>
+                        Pending Vehicles
                     </a>
                 @endif
                 <a href="{{ route('profile') }}" class="{{ request()->routeIs('profile') ? 'active' : '' }}">

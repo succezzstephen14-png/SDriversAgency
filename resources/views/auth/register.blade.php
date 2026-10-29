@@ -470,6 +470,20 @@
             registerBtn.disabled = false;
             registerBtn.innerHTML = 'Create Account';
         }
+
+        const roleSelect = document.getElementById('role');
+        document.querySelectorAll('.social-buttons a').forEach(function(link) {
+            link.addEventListener('click', function(event) {
+                if (!roleSelect.reportValidity()) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const target = new URL(link.href);
+                target.searchParams.set('role', roleSelect.value);
+                link.href = target.toString();
+            });
+        });
     });
 </script>
 
@@ -515,6 +529,21 @@
                     <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required autocomplete="name" placeholder="Enter your full name">
                 </div>
                 @error('name')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="role">I am registering as</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user-tag"></i>
+                    <select id="role" class="form-control @error('role') is-invalid @enderror" name="role" required>
+                        <option value="">Select an account type</option>
+                        <option value="driver" @selected(old('role') === 'driver')>Driver</option>
+                        <option value="vehicle_owner" @selected(old('role') === 'vehicle_owner')>Vehicle owner</option>
+                    </select>
+                </div>
+                @error('role')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>

@@ -35,7 +35,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('profile.update') }}" method="POST">
+                    <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -65,9 +65,75 @@
                                    value="{{ old('address', $user->address) }}" placeholder="Street address, city">
                         </div>
 
+                        @if($user->role === 'vehicle_owner')
+                            <hr>
+                            <h5 class="mb-3">Vehicle Owner Details</h5>
+                            <p class="text-muted">Complete these details to register and manage your vehicles.</p>
+
+                            <div class="mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth"
+                                       value="{{ old('date_of_birth', optional($user->date_of_birth)->format('Y-m-d')) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="ghana_card_number" class="form-label">Ghana Card Number</label>
+                                <input type="text" class="form-control" id="ghana_card_number" name="ghana_card_number"
+                                       value="{{ old('ghana_card_number', $user->ghana_card_number) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="profile_picture" class="form-label">Profile Picture</label>
+                                @if($user->profile_picture)
+                                    <img src="{{ asset('storage/'.$user->profile_picture) }}" alt="Current profile picture" class="d-block mb-2 rounded" style="max-width: 120px; max-height: 120px;">
+                                @endif
+                                <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/jpeg,image/png,image/webp" @required(!$user->profile_picture)>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="ghana_card_picture" class="form-label">Ghana Card Picture</label>
+                                @if($user->ghana_card_picture)
+                                    <div class="form-text mb-2">Ghana Card picture already saved. Choose a new image only to replace it.</div>
+                                @endif
+                                <input type="file" class="form-control" id="ghana_card_picture" name="ghana_card_picture" accept="image/jpeg,image/png,image/webp" @required(!$user->ghana_card_picture)>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="digital_address" class="form-label">Digital Address</label>
+                                <input type="text" class="form-control" id="digital_address" name="digital_address"
+                                       value="{{ old('digital_address', $user->digital_address) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="guarantor_name" class="form-label">Guarantor Name</label>
+                                <input type="text" class="form-control" id="guarantor_name" name="guarantor_name"
+                                       value="{{ old('guarantor_name', $user->guarantor_name) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="guarantor_contact" class="form-label">Guarantor Contact</label>
+                                <input type="tel" class="form-control" id="guarantor_contact" name="guarantor_contact"
+                                       value="{{ old('guarantor_contact', $user->guarantor_contact) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="guarantor_ghana_card_picture" class="form-label">Guarantor Ghana Card Picture</label>
+                                @if($user->guarantor_ghana_card_picture)
+                                    <div class="form-text mb-2">Guarantor Ghana Card picture already saved. Choose a new image only to replace it.</div>
+                                @endif
+                                <input type="file" class="form-control" id="guarantor_ghana_card_picture" name="guarantor_ghana_card_picture" accept="image/jpeg,image/png,image/webp" @required(!$user->guarantor_ghana_card_picture)>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="guarantor_relationship" class="form-label">Relationship to Guarantor</label>
+                                <input type="text" class="form-control" id="guarantor_relationship" name="guarantor_relationship"
+                                       value="{{ old('guarantor_relationship', $user->guarantor_relationship) }}" required>
+                            </div>
+                        @endif
+
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            <strong>Admin review:</strong> Changes to your name, phone number, or address are submitted for approval before becoming active.
+                            <strong>Admin review:</strong> Changes to your name, phone number, or address are submitted for approval before becoming active. Your initial vehicle-owner profile is saved when you complete this form.
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">

@@ -45,6 +45,27 @@ class GoogleOAuthTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_google_registration_saves_the_role_selected_before_oauth(): void
+    {
+        $googleUser = new \Laravel\Socialite\Two\User();
+        $googleUser->email = 'new-driver@example.com';
+        $googleUser->name = 'New Driver';
+        $googleUser->user = ['email_verified' => true];
+
+        $provider = Mockery::mock(Provider::class);
+        $provider->shouldReceive('user')->once()->andReturn($googleUser);
+        Socialite::shouldReceive('driver')->with('google')->once()->andReturn($provider);
+
+        $this->withSession(['registration.role' => 'driver'])
+            ->get(route('auth.google.callback'))
+            ->assertRedirect(route('verification.notice'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'new-driver@example.com',
+            'role' => 'driver',
+        ]);
+    }
+
     public function test_google_verified_email_is_marked_verified_for_an_existing_user(): void
     {
         $user = User::factory()->unverified()->create(['email' => 'verified@example.com']);

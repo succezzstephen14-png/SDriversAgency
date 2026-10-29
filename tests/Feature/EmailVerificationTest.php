@@ -20,6 +20,7 @@ class EmailVerificationTest extends TestCase
         $this->post(route('register.post'), [
             'name' => 'New User',
             'email' => 'new-user@example.com',
+            'role' => 'driver',
             'password' => 'SecurePassword123!',
             'password_confirmation' => 'SecurePassword123!',
         ])->assertRedirect(route('verification.notice'));
@@ -27,6 +28,7 @@ class EmailVerificationTest extends TestCase
         $user = User::where('email', 'new-user@example.com')->firstOrFail();
 
         $this->assertNull($user->email_verified_at);
+        $this->assertSame('driver', $user->role);
         Notification::assertSentTo($user, VerifyEmail::class);
 
         $this->actingAs($user)

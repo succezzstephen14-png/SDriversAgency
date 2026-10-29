@@ -45,6 +45,15 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'longitude',
         'last_location_update',
         'pending_profile_changes',
+        'date_of_birth',
+        'ghana_card_number',
+        'profile_picture',
+        'ghana_card_picture',
+        'digital_address',
+        'guarantor_name',
+        'guarantor_contact',
+        'guarantor_ghana_card_picture',
+        'guarantor_relationship',
     ];
 
     /**
@@ -67,10 +76,13 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'onboarding_completed' => 'boolean',
+            'onboarded_at' => 'datetime',
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
             'last_location_update' => 'datetime',
             'pending_profile_changes' => 'array',
+            'date_of_birth' => 'date',
         ];
     }
 
@@ -178,7 +190,8 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function syncOnboardingStatus(): void
     {
         $completed = $this->isAdmin()
-            || (!empty($this->phone)
+            || ($this->role === 'vehicle_owner' && $this->hasCompleteVehicleOwnerProfile())
+            || ($this->role !== 'vehicle_owner' && !empty($this->phone)
                 && !empty($this->address)
                 && $this->driver()->where('status', 'available')->exists()
                 && $this->vehicles()->count() > 0
@@ -192,6 +205,22 @@ class User extends Authenticatable implements MustVerifyEmailContract
         if ($this->onboarding_completed !== $completed || (!empty($attributes['onboarded_at']) && empty($this->onboarded_at))) {
             $this->update($attributes);
         }
+    }
+
+    public function hasCompleteVehicleOwnerProfile(): bool
+    {
+        return $this->role === 'vehicle_owner'
+            && !empty($this->phone)
+            && !empty($this->address)
+            && !empty($this->date_of_birth)
+            && !empty($this->ghana_card_number)
+            && !empty($this->profile_picture)
+            && !empty($this->ghana_card_picture)
+            && !empty($this->digital_address)
+            && !empty($this->guarantor_name)
+            && !empty($this->guarantor_contact)
+            && !empty($this->guarantor_ghana_card_picture)
+            && !empty($this->guarantor_relationship);
     }
 
     /**

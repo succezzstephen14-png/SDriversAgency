@@ -10,7 +10,7 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h4 class="mb-0"><i class="fas fa-user"></i> Profile</h4>
-                        @if(!empty($user->phone) && !empty($user->address))
+                        @if($user->role === 'vehicle_owner' ? $user->hasCompleteVehicleOwnerProfile() : (!empty($user->phone) && !empty($user->address)))
                             <span class="badge bg-success">Complete</span>
                         @else
                             <span class="badge bg-warning">Incomplete</span>
@@ -36,7 +36,7 @@
                         <dd class="col-sm-8">{{ $user->email }}</dd>
 
                         <dt class="col-sm-4">Role</dt>
-                        <dd class="col-sm-8">{{ ucfirst($user->role) }}</dd>
+                        <dd class="col-sm-8">{{ ucfirst(str_replace('_', ' ', $user->role)) }}</dd>
 
                         <dt class="col-sm-4">Phone</dt>
                         <dd class="col-sm-8">
@@ -53,6 +53,26 @@
                                 <small class="text-danger d-block">Missing</small>
                             @endif
                         </dd>
+
+                        @if($user->role === 'vehicle_owner')
+                            <dt class="col-sm-4">Date of Birth</dt>
+                            <dd class="col-sm-8">{{ optional($user->date_of_birth)->format('F j, Y') ?? '-' }}</dd>
+
+                            <dt class="col-sm-4">Ghana Card Number</dt>
+                            <dd class="col-sm-8">{{ $user->ghana_card_number ?? '-' }}</dd>
+
+                            <dt class="col-sm-4">Digital Address</dt>
+                            <dd class="col-sm-8">{{ $user->digital_address ?? '-' }}</dd>
+
+                            <dt class="col-sm-4">Guarantor</dt>
+                            <dd class="col-sm-8">{{ $user->guarantor_name ?? '-' }}</dd>
+
+                            <dt class="col-sm-4">Guarantor Contact</dt>
+                            <dd class="col-sm-8">{{ $user->guarantor_contact ?? '-' }}</dd>
+
+                            <dt class="col-sm-4">Relationship to Guarantor</dt>
+                            <dd class="col-sm-8">{{ $user->guarantor_relationship ?? '-' }}</dd>
+                        @endif
                     </dl>
 
                     <div class="mt-4 d-flex justify-content-between">

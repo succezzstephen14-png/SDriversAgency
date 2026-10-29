@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password as PasswordFacade;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Socialite\Facades\Socialite;
@@ -179,13 +180,14 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', Password::defaults(), 'confirmed'],
+            'role' => ['required', 'in:driver,vehicle_owner'],
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => 'user',
+            'role' => $validated['role'],
             'onboarding_completed' => false,
         ]);
 
@@ -324,11 +326,79 @@ class AuthController extends Controller
                 ->withErrors(['profile' => 'Your profile changes are awaiting admin review. You can submit another update after they are reviewed.']);
         }
 
-        $validated = $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
-        ]);
+        ];
+
+        if ($user->role === 'vehicle_owner') {
+            $rules = array_merge($rules, [
+                'phone' => ['required', 'string', 'max:20'],
+                'address' => ['required', 'string', 'max:255'],
+                'date_of_birth' => ['required', 'date', 'before:today'],
+                'ghana_card_number' => ['required', 'string', 'max:30'],
+                'digital_address' => ['required', 'string', 'max:255'],
+                'guarantor_name' => ['required', 'string', 'max:255'],
+                'guarantor_contact' => ['required', 'string', 'max:20'],
+                'guarantor_relationship' => ['required', 'string', 'max:100'],
+                'profile_picture' => [$user->profile_picture ? 'nullable' : 'required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+                'ghana_card_picture' => [$user->ghana_card_picture ? 'nullable' : 'required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+                'guarantor_ghana_card_picture' => [$user->guarantor_ghana_card_picture ? 'nullable' : 'required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            ]);
+        }
+
+        $validated = $request->validate($rules);
+
+        if ($user->role === 'vehicle_owner') {
+            if ($request->hasFile('profile_picture')) {
+                $path = $request->file('profile_picture')->store('owner-profile-pictures', 'public');
+                if (!is_string($path)) {
+                    throw new \RuntimeException('Unable to store the vehicle owner profile picture.');
+                }
+
+                $validated['profile_picture'] = $path;
+            }
+
+            foreach (['ghana_card_picture', 'guarantor_ghana_card_picture'] as $field) {
+                if ($request->hasFile($field)) {
+                    $path = $request->file($field)->store('documents/owner-profiles', 'local');
+                    if (!is_string($path)) {
+                        throw new \RuntimeException("Unable to store the uploaded {$field}.");
+                    }
+
+                    $validated[$field] = 'private:'.$path;
+                }
+            }
+
+            $ownerFields = [
+                'date_of_birth',
+                'ghana_card_number',
+                'profile_picture',
+                'ghana_card_picture',
+                'digital_address',
+                'guarantor_name',
+                'guarantor_contact',
+                'guarantor_ghana_card_picture',
+                'guarantor_relationship',
+            ];
+            $ownerProfileChanges = array_intersect_key($validated, array_flip($ownerFields));
+            $isCompletingOwnerProfile = !$user->hasCompleteVehicleOwnerProfile();
+
+            if ($isCompletingOwnerProfile) {
+                $user->fill($validated)->save();
+                $user->syncOnboardingStatus();
+
+                return redirect()->route('profile')
+                    ->with('success', 'Your vehicle owner profile has been completed.');
+            }
+
+            if ($ownerProfileChanges !== []) {
+                $user->fill($ownerProfileChanges)->save();
+            }
+
+            $validated = array_diff_key($validated, array_flip($ownerFields));
+        }
 
         $changes = array_filter(
             $validated,
@@ -338,7 +408,9 @@ class AuthController extends Controller
 
         if ($changes === []) {
             return redirect()->route($user->isServiceCustomer() ? 'service.profile' : 'profile.edit')
-                ->with('success', 'No profile changes were submitted.');
+                ->with('success', $user->role === 'vehicle_owner' && $ownerProfileChanges !== []
+                    ? 'Your profile details have been updated.'
+                    : 'No profile changes were submitted.');
         }
 
         $user->pending_profile_changes = $changes;
@@ -437,8 +509,19 @@ class AuthController extends Controller
     }
 
     // Social Authentication Methods
-    public function redirectToGoogle()
+    public function redirectToGoogle(Request $request)
     {
+        $registrationRole = $request->query('role');
+        if ($registrationRole !== null && !in_array($registrationRole, ['driver', 'vehicle_owner'], true)) {
+            return redirect()->route('register')
+                ->withErrors(['role' => 'Select whether you are registering as a driver or vehicle owner.']);
+        }
+        if ($registrationRole !== null) {
+            $request->session()->put('registration.role', $registrationRole);
+        } else {
+            $request->session()->forget('registration.role');
+        }
+
         if (!config('services.google.client_id') || !config('services.google.client_secret')) {
             \Log::error('Google sign-in is unavailable because OAuth credentials are not configured.');
 
@@ -458,7 +541,12 @@ class AuthController extends Controller
                 . (isset($callbackParts['port']) ? ':' . $callbackParts['port'] : '');
 
             if (request()->getSchemeAndHttpHost() !== $callbackOrigin) {
-                return redirect()->away($callbackOrigin . '/auth/google');
+                $callbackUrl = $callbackOrigin . '/auth/google';
+                if ($registrationRole !== null) {
+                    $callbackUrl .= '?role=' . rawurlencode($registrationRole);
+                }
+
+                return redirect()->away($callbackUrl);
             }
         }
 
@@ -480,6 +568,10 @@ class AuthController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->user();
+            $registrationRole = request()->session()->pull('registration.role', 'user');
+            if (!in_array($registrationRole, ['driver', 'vehicle_owner'], true)) {
+                $registrationRole = 'user';
+            }
             $email = $googleUser->getEmail();
             $emailVerified = filter_var(
                 data_get($googleUser->user ?? [], 'email_verified'),
@@ -498,7 +590,7 @@ class AuthController extends Controller
                     'name' => is_string($name) && trim($name) !== '' ? $name : strtok($email, '@'),
                     'email' => $email,
                     'password' => Hash::make(Str::random(24)),
-                    'role' => 'user',
+                    'role' => $registrationRole,
                     'onboarding_completed' => false,
                     'email_verified_at' => $emailVerified ? now() : null,
                 ]);
@@ -538,8 +630,19 @@ class AuthController extends Controller
         }
     }
 
-    public function redirectToApple()
+    public function redirectToApple(Request $request)
     {
+        $registrationRole = $request->query('role');
+        if ($registrationRole !== null && !in_array($registrationRole, ['driver', 'vehicle_owner'], true)) {
+            return redirect()->route('register')
+                ->withErrors(['role' => 'Select whether you are registering as a driver or vehicle owner.']);
+        }
+        if ($registrationRole !== null) {
+            $request->session()->put('registration.role', $registrationRole);
+        } else {
+            $request->session()->forget('registration.role');
+        }
+
         return Socialite::driver('apple')->redirect();
     }
 
@@ -547,6 +650,10 @@ class AuthController extends Controller
     {
         try {
             $appleUser = Socialite::driver('apple')->user();
+            $registrationRole = request()->session()->pull('registration.role', 'user');
+            if (!in_array($registrationRole, ['driver', 'vehicle_owner'], true)) {
+                $registrationRole = 'user';
+            }
             $emailVerified = filter_var(
                 data_get($appleUser->user ?? [], 'email_verified'),
                 FILTER_VALIDATE_BOOLEAN
@@ -564,7 +671,7 @@ class AuthController extends Controller
                     'name' => $appleUser->getName() ?? 'Apple User',
                     'email' => $appleUser->getEmail(),
                     'password' => Hash::make(Str::random(24)),
-                    'role' => 'user',
+                    'role' => $registrationRole,
                     'onboarding_completed' => false,
                     'email_verified_at' => $emailVerified ? now() : null,
                 ]);
