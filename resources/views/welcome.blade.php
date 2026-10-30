@@ -1444,7 +1444,7 @@ html {
     <div class="home-hero-inner">
         <header class="home-hero-heading">
             <h1 id="home-hero-title">Your Next Opportunity<br><span>Starts Here.</span></h1>
-            <p>Professional drivers. Trusted partnerships. Opportunities that move you forward.</p>
+            <p>One agency. More opportunities. Better connections. Moving success forward.</p>
             <a class="home-hero-cta" href="{{ route('register') }}">Get Started <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
         </header>
 
@@ -1482,7 +1482,7 @@ html {
                                     <span class="audience-option-copy"><strong>Register a Vehicle</strong><small>List your car for approved drivers</small></span>
                                     <i class="fas fa-chevron-right audience-option-arrow" aria-hidden="true"></i>
                                 </a>
-                                <a class="audience-option" href="{{ route('drivers.index') }}">
+                                <a class="audience-option" href="{{ route('register') }}">
                                     <span class="audience-option-icon"><i class="fas fa-user" aria-hidden="true"></i></span>
                                     <span class="audience-option-copy"><strong>Find a Driver</strong><small>Match with a verified professional</small></span>
                                     <i class="fas fa-chevron-right audience-option-arrow" aria-hidden="true"></i>
