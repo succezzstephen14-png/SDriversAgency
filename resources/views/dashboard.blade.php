@@ -304,7 +304,7 @@
                 </div>
             </div>
             <div class="hero-image-grid">
-                <div class="hero-image-card" style="background-image: url('https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=900&q=80');">
+                <div class="hero-image-card" style="background-image: url('https://images.unsplash.com/photo-1696634523711-d8ca4758cccd?auto=format&fit=crop&w=1200&q=85');">
                     <div>Reliable drivers</div>
                 </div>
                 <div class="hero-image-card" style="background-image: url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=900&q=80');">
